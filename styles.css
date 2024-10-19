@@ -10,7 +10,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-image: url('https://bpfxsxuoafjsnhgojcgx.supabase.co/storage/v1/object/public/assets/casino-background.jpg');
+    background-image: url('https://image.api.playstation.com/vulcan/ap/rnd/202307/0807/2d45e7486d2ebb7361dc56470ca18fb5ad21c11bab5531b1.png?w=440');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -58,7 +58,7 @@ h1, h2, h3 {
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    background-image: url('https://bpfxsxuoafjsnhgojcgx.supabase.co/storage/v1/object/public/assets/card-texture.png');
+    background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWe9YGT53DsbDBIEfzx9jW03PWXTtao7YgUp623A_c8fg96kw2Ye3mHtbfzalcqcpfi3Y&usqp=CAU');
     background-size: cover;
 }
 
