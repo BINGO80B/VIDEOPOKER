@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Poker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Video Poker</h1>
+        <div id="registration-screen">
+            <h2>Registro de Nuevo Usuario</h2>
+            <input type="text" id="username" placeholder="Nombre de usuario">
+            <button id="registerBtn">Registrarse</button>
+            <p id="registrationMessage"></p>
+        </div>
+        <div id="login-screen" class="hidden">
+            <h2>Iniciar Sesión</h2>
+            <p>Bienvenido de nuevo, <span id="savedUsername"></span></p>
+            <button id="loginBtn">Iniciar Sesión</button>
+            <p id="loginMessage"></p>
+        </div>
+        <div id="game-screen" class="hidden">
+            <div id="user-info">
+                <p>Usuario: <span id="currentUsername"></span></p>
+                <p>ID: <span id="currentUserId"></span></p>
+            </div>
+            <div id="cards"></div>
+            <div id="controls">
+                <button id="dealBtn">Repartir</button>
+                <button id="drawBtn" disabled>Cambiar</button>
+            </div>
+            <div id="message"></div>
+            <div id="credits">$<span id="creditAmount">0</span></div>
+            <button id="creditsBtn">Cargar/Retirar Créditos</button>
+            <div id="creditsModal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>Cargar/Retirar Créditos</h2>
+                    <button id="closeCreditsModalBtn" class="close-btn">&times;</button>
+                    <p>Para cargar créditos comunícate al WhatsApp +573247159521</p>
+                    <input type="text" id="codeInput" placeholder="Ingresa el código de carga">
+                    <button id="submitCodeBtn">Cargar</button>
+                    <hr>
+                    <h3>Retirar Créditos</h3>
+                    <input type="number" id="withdrawAmount" placeholder="Monto a retirar">
+                    <button id="withdrawBtn">Retirar</button>
+                </div>
+            </div>
+            <div id="receiptModal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>Recibo de Retiro</h2>
+                    <p>Nombre de usuario: <span id="receiptUsername"></span></p>
+                    <p>ID del jugador: <span id="receiptPlayerId"></span></p>
+                    <p>Cantidad a retirar: $<span id="receiptAmount"></span></p>
+                    <p>Fecha: <span id="receiptDate"></span></p>
+                    <p>Hora: <span id="receiptTime"></span></p>
+                    <p>Código de retiro: <span id="receiptCode"></span></p>
+                    <button id="closeReceiptBtn">Cerrar</button>
+                </div>
+            </div>
+        </div>
+        <div id="info-screen" class="hidden">
+            <div id="paytable">
+                <h2>Tabla de Pagos</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mano</th>
+                            <th>$100</th>
+                            <th>$200</th>
+                            <th>$300</th>
+                            <th>$400</th>
+                            <th>$500</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Escalera Real</td><td>25000</td><td>50000</td><td>75000</td><td>100000</td><td>125000</td></tr>
+                        <tr><td>Escalera de Color</td><td>5000</td><td>10000</td><td>15000</td><td>20000</td><td>25000</td></tr>
+                        <tr><td>Poker</td><td>2500</td><td>5000</td><td>7500</td><td>10000</td><td>12500</td></tr>
+                        <tr><td>Full</td><td>700</td><td>1400</td><td>2100</td><td>2800</td><td>3500</td></tr>
+                        <tr><td>Color</td><td>500</td><td>1000</td><td>1500</td><td>2000</td><td>2500</td></tr>
+                        <tr><td>Escalera</td><td>400</td><td>800</td><td>1200</td><td>1600</td><td>2000</td></tr>
+                        <tr><td>Trío</td><td>300</td><td>600</td><td>900</td><td>1200</td><td>1500</td></tr>
+                        <tr><td>Dos Pares</td><td>200</td><td>400</td><td>600</td><td>800</td><td>1000</td></tr>
+                        <tr><td>Par de J o mejor</td><td>100</td><td>200</td><td>300</td><td>400</td><td>500</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="bet-selector">
+                <h2>Valor de la Apuesta</h2>
+                <select id="betAmount">
+                    <option value="100">$100</option>
+                    <option value="200">$200</option>
+                    <option value="300">$300</option>
+                    <option value="400">$400</option>
+                    <option value="500">$500</option>
+                </select>
+            </div>
+        </div>
+        <button id="toggleScreenBtn">Cambiar Pantalla</button>
+        <button id="logoutBtn" class="hidden">Cerrar Sesión</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

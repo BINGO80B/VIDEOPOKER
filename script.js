@@ -1,594 +1,548 @@
-const buyTicketsScreen = document.getElementById('buy-tickets-screen');
-const drawScreen = document.getElementById('draw-screen');
-const countdownElement = document.getElementById('countdown');
-const ticketsSoldElement = document.getElementById('tickets-sold');
-const totalPotElement = document.getElementById('total-pot');
-const firstLinePrizeElement = document.getElementById('first-line-prize');
-const secondLinePrizeElement = document.getElementById('second-line-prize');
-const bingoPrizeElement = document.getElementById('bingo-prize');
-const drawFirstLinePrizeElement = document.getElementById('draw-first-line-prize');
-const drawSecondLinePrizeElement = document.getElementById('draw-second-line-prize');
-const drawBingoPrizeElement = document.getElementById('draw-bingo-prize');
-const creditsElement = document.getElementById('credit-amount');
-const ticketsContainer = document.getElementById('tickets-container');
-const buySelectedTicketsBtn = document.getElementById('buy-selected-tickets');
-const currentBall = document.getElementById('ball-number');
-const drawnBallsContainer = document.getElementById('drawn-balls');
-const playerTicketsContainer = document.getElementById('player-tickets');
+const suits = ['♠', '♥', '♦', '♣'];
+const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+let deck = [];
+let hand = [];
+let credits = 0;
+let currentWin = 0;
+let currentBet = 100;
+let withdrawalCount = 0;
+let currentUser = null;
 
-let balls = Array.from({length: 90}, (_, i) => i + 1);
-let calledBalls = [];
-let intervalId;
-let countdownTime = 120; // 2 minutes in seconds
-let ticketsSold = 0;
-let ticketPrice = 200;
-let totalPot = 0;
-let firstLinePrize = 0;
-let secondLinePrize = 0;
-let bingoPrize = 0;
-let credits = 2000;
-let selectedTickets = new Set();
-let playerTickets = [];
-let autoTickets = [];
-let drawIntervalId;
-let firstLineWon = false;
-let secondLineWon = false;
-let bingoWon = false;
-let ticketSalesEnded = false;
+const cardsContainer = document.getElementById('cards');
+const dealBtn = document.getElementById('dealBtn');
+const drawBtn = document.getElementById('drawBtn');
+const messageEl = document.getElementById('message');
+const creditEl = document.getElementById('creditAmount');
+const toggleScreenBtn = document.getElementById('toggleScreenBtn');
+const gameScreen = document.getElementById('game-screen');
+const infoScreen = document.getElementById('info-screen');
+const betSelector = document.getElementById('betAmount');
+const creditsBtn = document.getElementById('creditsBtn');
+const creditsModal = document.getElementById('creditsModal');
+const codeInput = document.getElementById('codeInput');
+const submitCodeBtn = document.getElementById('submitCodeBtn');
+const withdrawAmount = document.getElementById('withdrawAmount');
+const withdrawBtn = document.getElementById('withdrawBtn');
+const receiptModal = document.getElementById('receiptModal');
+const closeReceiptBtn = document.getElementById('closeReceiptBtn');
+const registrationScreen = document.getElementById('registration-screen');
+const  loginScreen = document.getElementById('login-screen');
+const usernameInput = document.getElementById('username');
+const registerBtn = document.getElementById('registerBtn');
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const currentUsernameEl = document.getElementById('currentUsername');
+const currentUserIdEl = document.getElementById('currentUserId');
+const registrationMessageEl = document.getElementById('registrationMessage');
+const loginMessageEl = document.getElementById('loginMessage');
+const savedUsernameEl = document.getElementById('savedUsername');
+const closeCreditsModalBtn = document.getElementById('closeCreditsModalBtn');
 
-function updateCountdown() {
-    const minutes = Math.floor(countdownTime / 60);
-    const seconds = countdownTime % 60;
-    countdownElement.textContent = `Tiempo para el sorteo: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    
-    if (countdownTime > 15 && !ticketSalesEnded) {
-        countdownTime--;
-        simulateTicketSales();
-    } else if (countdownTime === 15 && !ticketSalesEnded) {
-        ticketSalesEnded = true;
-        endTicketSales();
-    } else if (countdownTime > 0) {
-        countdownTime--;
-    } else {
-        clearInterval(intervalId);
-        if (playerTickets.length > 0 || autoTickets.length > 0) {
-            showDrawScreen();
-            startGame();
-        } else {
-            resetGame();
+const payTable = {
+    'Escalera Real': [25000, 50000, 75000, 100000, 125000],
+    'Escalera de Color': [5000, 10000, 15000, 20000, 25000],
+    'Poker': [2500, 5000, 7500, 10000, 12500],
+    'Full': [700, 1400, 2100, 2800, 3500],
+    'Color': [500,   1000, 1500, 2000, 2500],
+    'Escalera': [400, 800, 1200, 1600, 2000],
+    'Trío': [300, 600, 900, 1200, 1500],
+    'Dos Pares': [200, 400, 600, 800, 1000],
+    'Par de J o mejor': [100, 200, 300, 400, 500]
+};
+
+const withdrawalCodes = ['0Bdu2N1p', '0RdchqhF', '5AX3h85p', '6XH887Br', '76PeQOOZ', '8ScdQcAM', '8rxivoWU', '924VviZi', '9wqb9ufy'];
+
+function createDeck() {
+    deck = [];
+    for (let suit of suits) {
+        for (let value of values) {
+            deck.push({ suit, value });
         }
     }
 }
 
-function simulateTicketSales() {
-    ticketsSold++;
-    updatePrizes();
-    updateDisplay();
-}
-
-function endTicketSales() {
-    showEndOfSalesMessage();
-    buySelectedTicketsBtn.disabled = true;
-    updatePrizes();
-    updateDisplay();
-}
-
-function showEndOfSalesMessage() {
-    const existingMessage = document.querySelector('.end-of-sales-message');
-    if (!existingMessage) {
-        const messageElement = document.createElement('div');
-        messageElement.textContent = "El tiempo de compra ha terminado";
-        messageElement.style.color = "red";
-        messageElement.style.fontWeight = "bold";
-        messageElement.style.marginTop = "10px";
-        messageElement.classList.add('end-of-sales-message');
-        countdownElement.insertAdjacentElement('afterend', messageElement);
+function shuffleDeck() {
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
     }
 }
 
-function updatePrizes() {
-    totalPot = ticketsSold * ticketPrice;
-    const netPot = totalPot * 0.9; // 10% de comisión
-    firstLinePrize = netPot * 0.2;
-    secondLinePrize = netPot * 0.2;
-    bingoPrize = netPot * 0.6;
-}
-
-function updateDisplay() {
-    ticketsSoldElement.textContent = `Tickets vendidos: ${ticketsSold}`;
-    totalPotElement.textContent = `Bote total: $${totalPot}`;
-    firstLinePrizeElement.textContent = `Premio 1ª línea: $${firstLinePrize.toFixed(2)}`;
-    secondLinePrizeElement.textContent = `Premio 2ª línea: $${secondLinePrize.toFixed(2)}`;
-    bingoPrizeElement.textContent = `Premio Bingo: $${bingoPrize.toFixed(2)}`;
-    drawFirstLinePrizeElement.textContent = `Premio 1ª línea: $${firstLinePrize.toFixed(2)}`;
-    drawSecondLinePrizeElement.textContent = `Premio 2ª línea: $${secondLinePrize.toFixed(2)}`;
-    drawBingoPrizeElement.textContent = `Premio Bingo: $${bingoPrize.toFixed(2)}`;
-    creditsElement.textContent = credits;
-}
-
-function startGame() {
-    drawIntervalId = setInterval(drawBall, 1500);
-}
-
-function startTicketSales() {
-    intervalId = setInterval(updateCountdown, 1000);
-    buySelectedTicketsBtn.disabled = false;
-    ticketSalesEnded = false;
-}
-
-function resetGame() {
-    clearInterval(intervalId);
-    clearInterval(drawIntervalId);
-    balls = Array.from({length: 90}, (_, i) => i + 1);
-    calledBalls = [];
-    currentBall.textContent = '--';
-    drawnBallsContainer.innerHTML = '';
-    playerTicketsContainer.innerHTML = '';
-    countdownTime = 120;
-    ticketsSold = 0;
-    totalPot = 0;
-    firstLinePrize = 0;
-    secondLinePrize = 0;
-    bingoPrize = 0;
-    selectedTickets.clear();
-    playerTickets = [];
-    autoTickets = [];
-    firstLineWon = false;
-    secondLineWon = false;
-    bingoWon = false;
-    ticketSalesEnded = false;
-    
-    const buyTicketsButton = drawScreen.querySelector('button');
-    if (buyTicketsButton) {
-        buyTicketsButton.remove();
-    }
-    
-    const endOfSalesMessage = document.querySelector('.end-of-sales-message');
-    if (endOfSalesMessage) {
-        endOfSalesMessage.remove();
-    }
-    
-    const winnerMessage = document.querySelector('.winner-message');
-    if (winnerMessage) {
-        winnerMessage.remove();
-    }
-    
-    updateDisplay();
-    countdownElement.textContent = 'Tiempo para el sorteo: 02:00';
-    createTickets();
-    showBuyTicketsScreen();
-    startTicketSales();
-}
-
-function createTicketGrid() {
-    function generateUniqueRandomNumbers(min, max, count) {
-        const numbers = new Set();
-        while (numbers.size < count) {
-            numbers.add(Math.floor(Math.random() * (max - min + 1)) + min);
-        }
-        return Array.from(numbers);
-    }
-
-    const columnRanges = [
-        [1, 9], [10, 19], [20, 29], [30, 39], [40, 49],
-        [50, 59], [60, 69], [70, 79], [80, 90]
+function dealInitialHand() {
+    hand = [
+        { suit: '♥', value: '10' },
+        { suit: '♥', value: 'J' },
+        { suit: '♥', value: 'Q' },
+        { suit: '♥', value: 'K' },
+        { suit: '♥', value: 'A' }
     ];
-    const ticketNumbers = columnRanges.map(([min, max]) => generateUniqueRandomNumbers(min, max, 3));
+    cardsContainer.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+        const cardEl = createCardElement(hand[i], true);
+        cardEl.setAttribute('data-index', i);
+        cardEl.addEventListener('click', () => toggleCardSelection(cardEl));
+        cardsContainer.appendChild(cardEl);
+    }
+    messageEl.textContent = 'Haz clic en "Repartir" para comenzar';
+    dealBtn.disabled = false;
+    drawBtn.disabled = true;
+}
 
-    const ticketGrid = Array(3).fill().map(() => Array(9).fill(null));
-
-    for (let row = 0; row < 3; row++) {
-        let numbersInRow = 0;
-        let availableColumns = [...Array(9).keys()];
-        
-        while (numbersInRow < 5) {
-            const randomColumnIndex = Math.floor(Math.random() * availableColumns.length);
-            const col = availableColumns[randomColumnIndex];
-            
-            if (ticketNumbers[col].length > 0) {
-                ticketGrid[row][col] = ticketNumbers[col].pop();
-                numbersInRow++;
-                availableColumns.splice(randomColumnIndex, 1);
-            } else {
-                availableColumns.splice(randomColumnIndex, 1);
-            }
+function dealCards() {
+    if (credits >= currentBet) {
+        credits -= currentBet;
+        updateCredits();
+        hand = [];
+        cardsContainer.innerHTML = '';
+        for (let i = 0; i < 5; i++) {
+            const card = deck.pop();
+            hand.push(card);
+            const cardEl = createCardElement(card, true);
+            cardEl.setAttribute('data-index', i);
+            cardEl.addEventListener('click', () => toggleCardSelection(cardEl));
+            cardsContainer.appendChild(cardEl);
         }
-    }
+        messageEl.textContent = `Apuesta actual: ${currentBet}`;
+        dealBtn.disabled = true;
+        drawBtn.disabled = false;
 
-    return ticketGrid;
-}
-
-function createTicket() {
-    const ticket = document.createElement('div');
-    ticket.classList.add('ticket');
-    const grid = document.createElement('div');
-    grid.classList.add('ticket-grid');
-
-    const ticketGrid = createTicketGrid();
-
-    for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 9; col++) {
-            const cell = document.createElement('div');
-            cell.classList.add('ticket-number');
-            if (ticketGrid[row][col] !== null) {
-                cell.textContent = ticketGrid[row][col];
-            }
-            grid.appendChild(cell);
-        }
-    }
-
-    ticket.appendChild(grid);
-    ticket.addEventListener('click', () => toggleTicketSelection(ticket));
-
-    return { ticket, grid: ticketGrid };
-}
-
-function toggleTicketSelection(ticket) {
-    if (!ticketSalesEnded) {
-        if (ticket.classList.contains('selected')) {
-            ticket.classList.remove('selected');
-            selectedTickets.delete(ticket);
-        } else {
-            ticket.classList.add('selected');
-            selectedTickets.add(ticket);
-        }
-        updateBuyButtonState();
-    }
-}
-
-function updateBuyButtonState() {
-    buySelectedTicketsBtn.disabled = selectedTickets.size === 0 || selectedTickets.size * ticketPrice > credits || ticketSalesEnded;
-}
-
-function createTickets() {
-    ticketsContainer.innerHTML = '';
-    for (let i = 0; i < 10; i++) {
-        const { ticket } = createTicket();
-        ticketsContainer.appendChild(ticket);
-    }
-    updateBuyButtonState();
-}
-
-function buySelectedTicketsHandler() {
-    if (!ticketSalesEnded) {
-        const cost = selectedTickets.size * ticketPrice;
-        if (cost <= credits) {
-            credits -= cost;
-            ticketsSold += selectedTickets.size;
-            selectedTickets.forEach(ticket => {
-                const ticketGrid = Array(3).fill().map(() => Array(9).fill(null));
-                const cells = ticket.querySelectorAll('.ticket-number');
-                cells.forEach((cell, index) => {
-                    const row = Math.floor(index / 9);
-                    const col = index % 9;
-                    ticketGrid[row][col] = cell.textContent || null;
-                });
-                playerTickets.push(ticketGrid);
-            });
-            updatePrizes();
-            updateDisplay();
-            selectedTickets.clear();
-            createTickets();
-        } else {
-            alert('No tienes suficientes créditos para comprar estos tickets.');
+        const initialHandResult = checkHand(false);
+        if (initialHandResult.winMultiplier > 0 && 
+            (initialHandResult.handType === 'Full' || 
+             initialHandResult.handType === 'Escalera' || 
+             initialHandResult.handType === 'Escalera de Color' ||
+             initialHandResult.handType === 'Escalera Real' ||
+             initialHandResult.handType === 'Color')) {
+            document.querySelectorAll('.card').forEach(card => card.classList.add('selected'));
+            messageEl.textContent = `${initialHandResult.handType}! Haz clic en "Cambiar" para ganar ${initialHandResult.winMultiplier}`;
         }
     } else {
-        alert('El tiempo de compra ha terminado.');
+        messageEl.textContent = "No tienes suficientes créditos para jugar.";
     }
 }
 
-function showBuyTicketsScreen() {
-    buyTicketsScreen.classList.add('active');
-    drawScreen.classList.remove('active');
+function toggleCardSelection(cardEl) {
+    cardEl.classList.toggle('selected');
 }
 
-function showDrawScreen() {
-    buyTicketsScreen.classList.remove('active');
-    drawScreen.classList.add('active');
-    displayPlayerTickets();
+function drawCards() {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((cardEl, index) => {
+        if (!cardEl.classList.contains('selected')) {
+            const newCard = deck.pop();
+            hand[index] = newCard;
+            const newCardEl = createCardElement(newCard, true);
+            cardEl.parentNode.replaceChild(newCardEl, cardEl);
+        }
+        cardEl.classList.remove('selected');
+    });
+    const result = checkHand(true);
+    handleWin(result.winMultiplier, result.handType);
 }
 
-function displayPlayerTickets() {
-    playerTicketsContainer.innerHTML = '';
-    
-    playerTickets.forEach((ticketGrid, index) => {
-        const ticketElement = createTicketElement(ticketGrid, `Jugador-${index + 1}`);
-        playerTicketsContainer.appendChild(ticketElement);
+function checkHand(isFinal = true) {
+    const handValues = hand.map(card => card.value);
+    const handSuits = hand.map(card => card.suit);
+
+    let winMultiplier = 0;
+    let handType = '';
+
+    if (isRoyalFlush(handValues, handSuits)) {
+        winMultiplier = payTable['Escalera Real'][(currentBet / 100) - 1];
+        handType = "Escalera Real";
+    } else if (isStraightFlush(handValues, handSuits)) {
+        winMultiplier = payTable['Escalera de Color'][(currentBet / 100) - 1];
+        handType = "Escalera de Color";
+    } else if (isFourOfAKind(handValues)) {
+        winMultiplier = payTable['Poker'][(currentBet / 100) - 1];
+        handType = "Poker";
+    } else if (isFullHouse(handValues)) {
+        winMultiplier = payTable['Full'][(currentBet / 100) - 1];
+        handType = "Full";
+    } else if (isFlush(handSuits)) {
+        winMultiplier = payTable['Color'][(currentBet / 100) - 1];
+        handType = "Color";
+    } else if (isStraight(handValues)) {
+        winMultiplier = payTable['Escalera'][(currentBet / 100) - 1];
+        handType = "Escalera";
+    } else if (isThreeOfAKind(handValues)) {
+        winMultiplier = payTable['Trío'][(currentBet / 100) - 1];
+        handType = "Trío";
+    } else if (isTwoPair(handValues)) {
+        winMultiplier = payTable['Dos Pares'][(currentBet / 100) - 1];
+        handType = "Dos Pares";
+    } else if (isOnePair(handValues)) {
+        winMultiplier = payTable['Par de J o mejor'][(currentBet / 100) - 1];
+        handType = "Par de J o mejor";
+    }
+
+    return { winMultiplier, handType };
+}
+
+function isRoyalFlush(values, suits) {
+    const royalValues = ['10', 'J', 'Q', 'K', 'A'];
+    return isStraightFlush(values, suits) && royalValues.every(v => values.includes(v));
+}
+
+function isStraightFlush(values, suits) {
+    return isFlush(suits) && isStraight(values);
+}
+
+function isFourOfAKind(values) {
+    return new Set(values).size === 2 && values.some(v => values.filter(x => x === v).length === 4);
+}
+
+function isFullHouse(values) {
+    const valueCounts = {};
+    for (let value of values) {
+        valueCounts[value] = (valueCounts[value] || 0) + 1;
+    }
+    const counts = Object.values(valueCounts);
+    return counts.includes(3) && counts.includes(2);
+}
+
+function isFlush(suits) {
+    return new Set(suits).size === 1;
+}
+
+function isStraight(values) {
+    const sortedValues = [...new Set(values)].sort((a, b) => {
+        const order = '23456789TJQKA';
+        return order.indexOf(a) - order.indexOf(b);
+    });
+    if (sortedValues.length !== 5) return false;
+
+    const valueOrder = '23456789TJQKA';
+    const indices = sortedValues.map(v => valueOrder.indexOf(v));
+
+    // Comprueba si es una escalera normal
+    if (indices[4] - indices[0] === 4) return true;
+
+    // Comprueba si es una escalera con As bajo (A, 2, 3, 4, 5)
+    if (sortedValues[0] === 'A' && sortedValues[1] === '2' && sortedValues[4] === '5') return true;
+
+    return false;
+}
+
+function isThreeOfAKind(values) {
+    return new Set(values).size === 3 && values.some(v => values.filter(x => x === v).length === 3);
+}
+
+function isTwoPair(values) {
+    const valueCounts = {};
+    for (let value of values) {
+        valueCounts[value] = (valueCounts[value] || 0) + 1;
+    }
+    const pairs = Object.values(valueCounts).filter(count => count === 2);
+    return pairs.length === 2;
+}
+
+function isOnePair(values) {
+    const letterPairs = ['J', 'Q', 'K', 'A'];
+    return letterPairs.some(letter => values.filter(v => v === letter).length === 2);
+}
+
+function handleWin(winMultiplier, handType) {
+    currentWin = winMultiplier;
+
+    if (currentWin > 0) {
+        messageEl.textContent = `${handType}! Ganaste ${currentWin}`;
+        showDoubleOption();
+    } else {
+        dealBtn.disabled = false;
+        drawBtn.disabled = true;
+        messageEl.textContent = `Mala suerte. Apuesta actual: ${currentBet}`;
+    }
+}
+
+function showDoubleOption() {
+    messageEl.innerHTML += `<br>¿Deseas doblar?<br>
+        <button id="doubleYesBtn">Sí</button>
+        <button id="doubleNoBtn">No</button>`;
+
+    document.getElementById('doubleYesBtn').addEventListener('click', startDoubleGame);
+    document.getElementById('doubleNoBtn').addEventListener('click', () => {
+        credits += currentWin;
+        updateCredits();
+        currentWin = 0;
+        dealBtn.disabled = false;
+        drawBtn.disabled = true;
+        messageEl.textContent = `Nueva mano. Apuesta actual: ${currentBet}`;
     });
 }
 
-function createTicketElement(ticketGrid, id) {
-    const ticketElement = document.createElement('div');
-    ticketElement.classList.add('player-ticket');
-    ticketElement.dataset.id = id;
-    const grid = document.createElement('div');
-    grid.classList.add('ticket-grid');
-    
-    for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 9; col++) {
-            const cell = document.createElement('div');
-            cell.classList.add('ticket-number');
-            if (ticketGrid[row][col] !== null) {
-                cell.textContent = ticketGrid[row][col];
-            }
-            grid.appendChild(cell);
-        }
+function startDoubleGame() {
+    cardsContainer.innerHTML = '';
+    shuffleDeck();
+
+    const openCard = deck.pop();
+    const openCardEl = createCardElement(openCard, true);
+    cardsContainer.appendChild(openCardEl);
+
+    const hiddenCards = [];
+    for (let i = 0; i < 4; i++) {
+        const card = deck.pop();
+        hiddenCards.push(card);
+        const cardEl = createCardElement(card, false);
+        cardEl.addEventListener('click', () => revealCards(cardEl, openCard, hiddenCards));
+        cardsContainer.appendChild(cardEl);
     }
-    
-    ticketElement.appendChild(grid);
-    return ticketElement;
+
+    messageEl.textContent = "Selecciona una carta tapada";
+    drawBtn.disabled = true;
 }
 
-function drawBall() {
-    if (balls.length === 0 || (firstLineWon && secondLineWon && bingoWon)) {
-        clearInterval(drawIntervalId);
-        alert('¡El juego ha terminado!');
-        enableBuyTicketsButton();
+function createCardElement(card, isOpen) {
+    const cardEl = document.createElement('div');
+    cardEl.classList.add('card');
+    if (isOpen) {
+        const valueEl = document.createElement('div');
+        valueEl.classList.add('card-value');
+        valueEl.textContent = card.value;
+
+        const suitEl = document.createElement('div');
+        suitEl.classList.add('card-suit');
+        suitEl.classList.add(card.suit === '♥' || card.suit === '♦' ? 'red' : 'black');
+        suitEl.textContent = card.suit;
+
+        cardEl.appendChild(valueEl);
+        cardEl.appendChild(suitEl);
+    } else {
+        cardEl.textContent = '?';
+        cardEl.dataset.value = card.value;
+        cardEl.dataset.suit = card.suit;
+    }
+    return cardEl;
+}
+
+function revealCards(selectedCardEl, openCard, hiddenCards) {
+    const selectedValue = selectedCardEl.dataset.value;
+    const selectedSuit = selectedCardEl.dataset.suit;
+
+    const cardElements = cardsContainer.querySelectorAll('.card');
+    cardElements.forEach((cardEl, index) => {
+        if (index !== 0) {
+            const card = hiddenCards[index - 1];
+            cardEl.innerHTML = '';
+
+            const valueEl = document.createElement('div');
+            valueEl.classList.add('card-value');
+            valueEl.textContent = card.value;
+
+            const suitEl = document.createElement('div');
+            suitEl.classList.add('card-suit');
+            suitEl.classList.add(card.suit === '♥' || card.suit === '♦' ? 'red' : 'black');
+            suitEl.textContent = card.suit;
+
+            cardEl.appendChild(valueEl);
+            cardEl.appendChild(suitEl);
+        }
+    });
+
+    const openCardValue = values.indexOf(openCard.value);
+    const selectedCardValue = values.indexOf(selectedValue);
+
+    if (selectedCardValue > openCardValue || (selectedValue === 'A' && openCard.value !== 'A')) {
+        currentWin *= 2;
+        messageEl.textContent = `¡Ganaste! Tus créditos se duplicaron a ${currentWin}`;
+        showDoubleOption();
+    } else if (selectedCardValue === openCardValue) {
+        messageEl.textContent = "Empate. ¿Deseas volver a doblar?";
+        showDoubleOption();
+    } else {
+        currentWin = 0;
+        messageEl.textContent = "Perdiste la doblada. Inténtalo de nuevo.";
+        dealBtn.disabled = false;
+        drawBtn.disabled = true;
+        messageEl.textContent += ` Apuesta actual: ${currentBet}`;
+    }
+
+    updateCredits();
+
+    Array.from(cardsContainer.children).forEach(card => card.removeEventListener('click', revealCards));
+}
+
+function updatePaytableHighlight() {
+    const rows = document.querySelectorAll('#paytable table tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        cells.forEach((cell, index) => {
+            if (index === currentBet / 100) {
+                cell.classList.add('highlight');
+            } else {
+                cell.classList.remove('highlight');
+            }
+        });
+    });
+}
+
+function showCreditsModal() {
+    creditsModal.classList.remove('hidden');
+}
+
+function hideCreditsModal() {
+    creditsModal.classList.add('hidden');
+}
+
+function submitCode() {
+    const code = codeInput.value.trim();
+    const [letters, numbers] = code.split(/(\d+)/);
+    if (letters === 'poker' && numbers ===  currentUser.id) {
+        credits += 5000;
+        updateCredits();
+        messageEl.textContent = 'Se han cargado $5000 créditos.';
+        hideCreditsModal();
+    } else {
+        messageEl.textContent = 'Código inválido. Inténtalo de nuevo.';
+    }
+    codeInput.value = '';
+}
+
+function withdrawCredits() {
+    const amount = parseInt(withdrawAmount.value);
+    if (isNaN(amount) || amount <= 0) {
+        messageEl.textContent = 'Por favor, ingresa un monto válido.';
+        return;
+    }
+    if (amount > credits) {
+        messageEl.textContent = 'No tienes suficientes créditos para retirar esa cantidad.';
         return;
     }
 
-    const randomIndex = Math.floor(Math.random() * balls.length);
-    const drawnBall = balls.splice(randomIndex, 1)[0];
-    calledBalls.push(drawnBall);
-
-    currentBall.textContent = drawnBall;
-    
-    const ballElement = document.createElement('div');
-    ballElement.classList.add('drawn-ball');
-    ballElement.textContent = drawnBall;
-    ballElement.style.backgroundColor = getRandomColor();
-    drawnBallsContainer.appendChild(ballElement);
-
-    if (drawnBallsContainer.children.length > 5) {
-        drawnBallsContainer.removeChild(drawnBallsContainer.firstChild);
-    }
-
-    markPlayerTickets(drawnBall);
-    updateTicketColors();
-    reorderTickets();
-    checkForWinners();
+    credits -= amount;
+    updateCredits();
+    hideCreditsModal();
+    showReceipt(amount);
 }
 
-function getRandomColor() {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
+function showReceipt(amount) {
+    const now = new Date();
+    const receiptCode = withdrawalCodes[withdrawalCount % withdrawalCodes.length];
+    withdrawalCount++;
+
+    document.getElementById('receiptUsername').textContent = currentUser.username;
+    document.getElementById('receiptPlayerId').textContent = currentUser.id;
+    document.getElementById('receiptAmount').textContent = amount;
+    document.getElementById('receiptDate').textContent = now.toLocaleDateString();
+    document.getElementById('receiptTime').textContent = now.toLocaleTimeString();
+    document.getElementById('receiptCode').textContent = receiptCode;
+
+    receiptModal.classList.remove('hidden');
 }
 
-function markPlayerTickets(number) {
-    const tickets = playerTicketsContainer.querySelectorAll('.player-ticket');
-    tickets.forEach(ticket => {
-        const numbers = ticket.querySelectorAll('.ticket-number');
-        numbers.forEach(cell => {
-            if (cell.textContent === number.toString()) {
-                cell.classList.add('marked');
-            }
-        });
-    });
-}
-
-function updateTicketColors() {
-    const tickets = playerTicketsContainer.querySelectorAll('.player-ticket');
-    
-    tickets.forEach(ticket => {
-        const rows = [
-            Array.from(ticket.querySelectorAll('.ticket-number')).slice(0, 9),
-            Array.from(ticket.querySelectorAll('.ticket-number')).slice(9, 18),
-            Array.from(ticket.querySelectorAll('.ticket-number')).slice(18, 27)
-        ];
-
-        let minMissingForLine = 5;
-        rows.forEach(row => {
-            const markedInRow = row.filter(cell => cell.classList.contains('marked')).length;
-            const missingForLine = 5 - markedInRow;
-            if (missingForLine < minMissingForLine) {
-                minMissingForLine = missingForLine;
-            }
-        });
-
-        if (secondLineWon) {
-            // Cambiar a modo Bingo
-            const totalMarked = rows.flat().filter(cell => cell.classList.contains('marked')).length;
-            const missingForBingo = 15 - totalMarked;
-            
-            if (missingForBingo <= 3) {
-                ticket.style.backgroundColor = missingForBingo === 1 ? '#FFCCCB' : missingForBingo === 2 ? '#FFFACD' : '#90EE90';
-            } else {
-                ticket.style.backgroundColor = '';
-            }
-        } else {
-            // Modo línea
-            if (minMissingForLine <= 3) {
-                ticket.style.backgroundColor = minMissingForLine === 1 ? '#FFCCCB' : minMissingForLine === 2 ? '#FFFACD' : '#90EE90';
-            } else {
-                ticket.style.backgroundColor = '';
-            }
-        }
-    });
-}
-
-function reorderTickets() {
-    const tickets = Array.from(playerTicketsContainer.querySelectorAll('.player-ticket'));
-    tickets.sort((a, b) => {
-        const colorOrder = {'#FFCCCB': 0, '#FFFACD': 1, '#90EE90': 2, '': 3};
-        return colorOrder[a.style.backgroundColor] - colorOrder[b.style.backgroundColor];
-    });
-    playerTicketsContainer.innerHTML = '';
-    tickets.forEach(ticket => playerTicketsContainer.appendChild(ticket));
-}
-
-function checkForWinners() {
-    if (!firstLineWon) {
-        checkFirstLine();
-    } else if (!secondLineWon) {
-        checkSecondLine();
-    } else if (!bingoWon) {
-        checkBingo();
-    }
-}
-
-function checkFirstLine() {
-    const tickets = playerTicketsContainer.querySelectorAll('.player-ticket');
-    const winners = [];
-
-    tickets.forEach(ticket => {
-        const rows = [
-            Array.from(ticket.querySelectorAll('.ticket-number')).slice(0, 9),
-            Array.from(ticket.querySelectorAll('.ticket-number')).slice(9, 18),
-            Array.from(ticket.querySelectorAll('.ticket-number')).slice(18, 27)
-        ];
-
-        rows.forEach((row, index) => {
-            if (row.filter(cell => cell.classList.contains('marked')).length === 5) {
-                winners.push({ id: ticket.dataset.id, row: index + 1 });
-            }
-        });
-    });
-
-    if (winners.length > 0) {
-        firstLineWon = true;
-        const prize = firstLinePrize / winners.length;
-        winners.forEach(winner => {
-            showWinnerAlert('Primera Línea', winner.id, prize);
-        });
-    }
-}
-
-function checkSecondLine() {
-    const tickets = playerTicketsContainer.querySelectorAll('.player-ticket');
-    const winners = [];
-
-    tickets.forEach(ticket => {
-        const rows = [
-            Array.from(ticket.querySelectorAll('.ticket-number')).slice(0, 9),
-            Array.from(ticket.querySelectorAll('.ticket-number')).slice(9, 18),
-            Array.from(ticket.querySelectorAll('.ticket-number')).slice(18, 27)
-        ];
-
-        let completedLines = 0;
-        rows.forEach((row, index) => {
-            if (row.filter(cell => cell.classList.contains('marked')).length === 5) {
-                completedLines++;
-            }
-        });
-
-        if (completedLines >= 2) {
-            winners.push({ id: ticket.dataset.id });
-        }
-    });
-
-    if (winners.length > 0) {
-        secondLineWon = true;
-        const prize = secondLinePrize / winners.length;
-        winners.forEach(winner => {
-            showWinnerAlert('Segunda Línea', winner.id, prize);
-        });
-    }
-}
-
-function checkBingo() {
-    const tickets = playerTicketsContainer.querySelectorAll('.player-ticket');
-    const winners = [];
-
-    tickets.forEach(ticket => {
-        const numbers = ticket.querySelectorAll('.ticket-number');
-        if (Array.from(numbers).filter(cell => cell.classList.contains('marked')).length === 15) {
-            winners.push({ id: ticket.dataset.id });
-        }
-    });
-
-    if (winners.length > 0) {
-        bingoWon = true;
-        const prize = bingoPrize / winners.length;
-        winners.forEach(winner => {
-            showWinnerAlert('Bingo', winner.id, prize);
-        });
-    }
-}
-
-function showWinnerAlert(prizeType, ticketId, prize) {
-    clearInterval(drawIntervalId);
-    const winnerID = Math.floor(Math.random() * 90000) + 10000;
-
-    if (ticketId.startsWith('Jugador')) {
-        // Es el jugador que compra los tickets
-        const alertElement = document.createElement('div');
-        alertElement.classList.add('winner-alert');
-        alertElement.innerHTML = `
-            <h2>¡${prizeType}!</h2>
-            <p>Ticket ganador ID: ${ticketId}</p>
-            <p>Jugador ID: ${winnerID}</p>
-            <p>Premio: $${prize.toFixed(2)}</p>
-        `;
-
-        document.body.appendChild(alertElement);
-
-        credits += prize;
-        updateDisplay();
-
-        const playerAlert = document.createElement('div');
-        playerAlert.classList.add('player-alert');
-        playerAlert.textContent = `¡Felicidades! Has ganado $${prize.toFixed(2)} en ${prizeType}. Tus créditos han sido actualizados.`;
-        document.body.appendChild(playerAlert);
-
-        setTimeout(() => {
-            alertElement.remove();
-            playerAlert.remove();
-            resumeGame();
-        }, 6000);
+function registerUser() {
+    const username = usernameInput.value.trim();
+    if (username) {
+        const userId = generateUserId();
+        const user = { username, id: userId, credits: 0 };
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        currentUser = user;
+        showGameScreen();
     } else {
-        // Es otro jugador
-        showWinnerMessage(prizeType, ticketId, winnerID, prize);
-        setTimeout(resumeGame, 6000);
+        registrationMessageEl.textContent = 'Por favor, ingresa un nombre de usuario.';
     }
 }
 
-function showWinnerMessage(prizeType, ticketId, winnerID, prize) {
-    const existingMessage = document.querySelector('.winner-message');
-    if (existingMessage) {
-        existingMessage.remove();
-    }
-
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('winner-message');
-    messageElement.innerHTML = `
-        <h3>¡${prizeType}!</h3>
-        <p>Ticket ganador ID: ${ticketId}</p>
-        <p>Jugador ID: ${winnerID}</p>
-        <p>Premio: $${prize.toFixed(2)}</p>
-    `;
-
-    const insertAfter = document.querySelector('#drawn-balls');
-    insertAfter.parentNode.insertBefore(messageElement, insertAfter.nextSibling);
-}
-
-function resumeGame() {
-    if (!bingoWon) {
-        drawIntervalId = setInterval(drawBall, 1500);
+function loginUser() {
+    const savedUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (savedUser) {
+        currentUser = savedUser;
+        credits = currentUser.credits;
+        showGameScreen();
     } else {
-        enableBuyTicketsButton();
+        loginMessageEl.textContent = 'No se encontró un usuario guardado. Por favor, regístrate.';
     }
 }
 
-function enableBuyTicketsButton() {
-    const existingButton = drawScreen.querySelector('button');
-    if (!existingButton) {
-        const buyTicketsButton = document.createElement('button');
-        buyTicketsButton.textContent = 'Comprar Tickets';
-        buyTicketsButton.addEventListener('click', () => {
-            resetGame();
-            showBuyTicketsScreen();
-        });
-        drawScreen.appendChild(buyTicketsButton);
+function logoutUser() {
+    currentUser.credits = credits;
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    currentUser = null;
+    credits = 0;
+    updateCredits();
+    showLoginScreen();
+}
+
+function generateUserId() {
+    return Math.floor(10000 + Math.random() * 90000).toString();
+}
+
+function showGameScreen() {
+    registrationScreen.classList.add('hidden');
+    loginScreen.classList.add('hidden');
+    gameScreen.classList.remove('hidden');
+    logoutBtn.classList.remove('hidden');
+    currentUsernameEl.textContent = currentUser.username;
+    currentUserIdEl.textContent = currentUser.id;
+    credits = currentUser.credits;
+    updateCredits();
+    createDeck();
+    shuffleDeck();
+    dealInitialHand();
+}
+
+function showLoginScreen() {
+    const savedUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (savedUser) {
+        registrationScreen.classList.add('hidden');
+        loginScreen.classList.remove('hidden');
+        savedUsernameEl.textContent = savedUser.username;
+    } else {
+        registrationScreen.classList.remove('hidden');
+        loginScreen.classList.add('hidden');
+    }
+    gameScreen.classList.add('hidden');
+    logoutBtn.classList.add('hidden');
+}
+
+function updateCredits() {
+    creditEl.textContent = credits;
+    if (currentUser) {
+        currentUser.credits = credits;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
     }
 }
 
-createTickets();
-updateDisplay();
-showBuyTicketsScreen();
-startTicketSales();
+dealBtn.addEventListener('click', () => {
+    if (credits >= currentBet) {
+        createDeck();
+        shuffleDeck();
+        dealCards();
+    } else {
+        messageEl.textContent = "No tienes suficientes créditos para jugar.";
+    }
+});
 
-buySelectedTicketsBtn.addEventListener('click', buySelectedTicketsHandler);
+drawBtn.addEventListener('click', drawCards);
+
+toggleScreenBtn.addEventListener('click', () => {
+    gameScreen.classList.toggle('hidden');
+    infoScreen.classList.toggle('hidden');
+    updatePaytableHighlight();
+});
+
+betSelector.addEventListener('change', (e) => {
+    currentBet = parseInt(e.target.value);
+    updatePaytableHighlight();
+});
+
+creditsBtn.addEventListener('click', showCreditsModal);
+submitCodeBtn.addEventListener('click', submitCode);
+withdrawBtn.addEventListener('click', withdrawCredits);
+closeReceiptBtn.addEventListener('click', () => receiptModal.classList.add('hidden'));
+registerBtn.addEventListener('click', registerUser);
+loginBtn.addEventListener('click', loginUser);
+logoutBtn.addEventListener('click', logoutUser);
+closeCreditsModalBtn.addEventListener('click', hideCreditsModal);
+
+// Cerrar el modal de créditos al hacer clic fuera de él
+window.addEventListener('click', (event) => {
+    if (event.target === creditsModal) {
+        hideCreditsModal();
+    }
+});
+
+createDeck();
+shuffleDeck();
+updatePaytableHighlight();
+showLoginScreen();
