@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo Online Complejo - 90 Balotas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div id="buy-tickets-screen" class="screen">
+            <h1>Comprar Tickets de Bingo</h1>
+            <div id="countdown" class="countdown">Tiempo para el sorteo: 02:00</div>
+            <div class="info-panel">
+                <div id="tickets-sold">Tickets vendidos: 0</div>
+                <div id="ticket-price">Precio del ticket: $200</div>
+                <div id="total-pot">Bote total: $0</div>
+                <div id="first-line-prize">Premio 1ª línea: $0</div>
+                <div id="second-line-prize">Premio 2ª línea: $0</div>
+                <div id="bingo-prize">Premio Bingo: $0</div>
+            </div>
+            <div id="credits">Créditos: $<span id="credit-amount">2000</span></div>
+            <div id="tickets-container"></div>
+            <button id="buy-selected-tickets" class="buy-selected-btn">Comprar Tickets Seleccionados</button>
+        </div>
+
+        <div id="draw-screen" class="screen">
+            <h1>Bingo Online Complejo - 90 Balotas</h1>
+            <div class="info-panel">
+                <div id="draw-first-line-prize">Premio 1ª línea: $0</div>
+                <div id="draw-second-line-prize">Premio 2ª línea: $0</div>
+                <div id="draw-bingo-prize">Premio Bingo: $0</div>
+            </div>
+            <div id="current-ball" class="current-ball">
+                <span id="ball-number">--</span>
+            </div>
+            <div id="drawn-balls" class="drawn-balls"></div>
+            <div id="player-tickets" class="player-tickets"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
