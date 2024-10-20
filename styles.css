@@ -19,13 +19,13 @@ body {
 }
 
 .container {
-    background-color: rgba(52, 73, 94, 0.9);
+    background-color: rgba(52, 73, 94, 0.7);
     padding: 30px;
     border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     max-width: 100%;
     width: 100%;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(5px);
 }
 
 h1, h2, h3 {
@@ -51,15 +51,18 @@ h1, h2, h3 {
     border-radius: 10px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWe9YGT53DsbDBIEfzx9jW03PWXTtao7YgUp623A_c8fg96kw2Ye3mHtbfzalcqcpfi3Y&usqp=CAU');
+    background-image: url('');
     background-size: cover;
+    padding: 10px;
+    position: relative;
+    overflow: hidden;
 }
 
 .card:hover {
@@ -73,15 +76,29 @@ h1, h2, h3 {
 }
 
 .card-value {
-    font-size: 1.2em;
-    margin-bottom: 5px;
+    font-size: 2em;
+    font-weight: bold;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    position: absolute;
+    top: 5px;
+    left: 5px;
+}
+
+.card-value.red {
+    color: #e74c3c;
+}
+
+.card-value.black {
+    color: #2c3e50;
 }
 
 .card-suit {
-    font-size: 1.8em;
+    font-size: 3em;
     line-height: 1;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
 }
 
 .card-suit.red {

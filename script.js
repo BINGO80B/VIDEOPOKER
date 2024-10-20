@@ -1,3 +1,5 @@
+let usedCodes = new Set();
+
 const suits = ['♠', '♥', '♦', '♣'];
 const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 let deck = [];
@@ -26,7 +28,7 @@ const withdrawBtn = document.getElementById('withdrawBtn');
 const receiptModal = document.getElementById('receiptModal');
 const closeReceiptBtn = document.getElementById('closeReceiptBtn');
 const registrationScreen = document.getElementById('registration-screen');
-const  loginScreen = document.getElementById('login-screen');
+const loginScreen = document.getElementById('login-screen');
 const usernameInput = document.getElementById('username');
 const registerBtn = document.getElementById('registerBtn');
 const loginBtn = document.getElementById('loginBtn');
@@ -76,13 +78,7 @@ function dealInitialHand() {
         { suit: '♥', value: 'K' },
         { suit: '♥', value: 'A' }
     ];
-    cardsContainer.innerHTML = '';
-    for (let i = 0; i < 5; i++) {
-        const cardEl = createCardElement(hand[i], true);
-        cardEl.setAttribute('data-index', i);
-        cardEl.addEventListener('click', () => toggleCardSelection(cardEl));
-        cardsContainer.appendChild(cardEl);
-    }
+    renderHand();
     messageEl.textContent = 'Haz clic en "Repartir" para comenzar';
     dealBtn.disabled = false;
     drawBtn.disabled = true;
@@ -93,32 +89,33 @@ function dealCards() {
         credits -= currentBet;
         updateCredits();
         hand = [];
-        cardsContainer.innerHTML = '';
         for (let i = 0; i < 5; i++) {
-            const card = deck.pop();
-            hand.push(card);
-            const cardEl = createCardElement(card, true);
-            cardEl.setAttribute('data-index', i);
-            cardEl.addEventListener('click', () => toggleCardSelection(cardEl));
-            cardsContainer.appendChild(cardEl);
+            hand.push(deck.pop());
         }
+        renderHand();
         messageEl.textContent = `Apuesta actual: ${currentBet}`;
         dealBtn.disabled = true;
         drawBtn.disabled = false;
 
-        const initialHandResult = checkHand(false);
+        const initialHandResult = checkHand();
         if (initialHandResult.winMultiplier > 0 && 
-            (initialHandResult.handType === 'Full' || 
-             initialHandResult.handType === 'Escalera' || 
-             initialHandResult.handType === 'Escalera de Color' ||
-             initialHandResult.handType === 'Escalera Real' ||
-             initialHandResult.handType === 'Color')) {
+            ['Escalera', 'Color', 'Escalera de Color', 'Escalera Real'].includes(initialHandResult.handType)) {
             document.querySelectorAll('.card').forEach(card => card.classList.add('selected'));
             messageEl.textContent = `${initialHandResult.handType}! Haz clic en "Cambiar" para ganar ${initialHandResult.winMultiplier}`;
         }
     } else {
         messageEl.textContent = "No tienes suficientes créditos para jugar.";
     }
+}
+
+function renderHand() {
+    cardsContainer.innerHTML = '';
+    hand.forEach((card, index) => {
+        const cardEl = createCardElement(card, true);
+        cardEl.setAttribute('data-index', index);
+        cardEl.addEventListener('click', () => toggleCardSelection(cardEl));
+        cardsContainer.appendChild(cardEl);
+    });
 }
 
 function toggleCardSelection(cardEl) {
@@ -129,18 +126,15 @@ function drawCards() {
     const cards = document.querySelectorAll('.card');
     cards.forEach((cardEl, index) => {
         if (!cardEl.classList.contains('selected')) {
-            const newCard = deck.pop();
-            hand[index] = newCard;
-            const newCardEl = createCardElement(newCard, true);
-            cardEl.parentNode.replaceChild(newCardEl, cardEl);
+            hand[index] = deck.pop();
         }
-        cardEl.classList.remove('selected');
     });
-    const result = checkHand(true);
+    renderHand();
+    const result = checkHand();
     handleWin(result.winMultiplier, result.handType);
 }
 
-function checkHand(isFinal = true) {
+function checkHand() {
     const handValues = hand.map(card => card.value);
     const handSuits = hand.map(card => card.suit);
 
@@ -256,7 +250,10 @@ function handleWin(winMultiplier, handType) {
 }
 
 function showDoubleOption() {
-    messageEl.innerHTML += `<br>¿Deseas doblar?<br>
+    const potentialWin = currentWin * 2;
+    messageEl.innerHTML = `¿Deseas doblar?<br>
+        Créditos actuales a doblar: ${currentWin}<br>
+        Cantidad a ganar si ganas la doblada: ${potentialWin}<br>
         <button id="doubleYesBtn">Sí</button>
         <button id="doubleNoBtn">No</button>`;
 
@@ -269,6 +266,8 @@ function showDoubleOption() {
         drawBtn.disabled = true;
         messageEl.textContent = `Nueva mano. Apuesta actual: ${currentBet}`;
     });
+
+    drawBtn.disabled = true;
 }
 
 function startDoubleGame() {
@@ -299,11 +298,14 @@ function createCardElement(card, isOpen) {
         const valueEl = document.createElement('div');
         valueEl.classList.add('card-value');
         valueEl.textContent = card.value;
-
+        
         const suitEl = document.createElement('div');
         suitEl.classList.add('card-suit');
-        suitEl.classList.add(card.suit === '♥' || card.suit === '♦' ? 'red' : 'black');
         suitEl.textContent = card.suit;
+
+        const isRed = card.suit === '♥' || card.suit === '♦';
+        valueEl.classList.add(isRed ? 'red' : 'black');
+        suitEl.classList.add(isRed ? 'red' : 'black');
 
         cardEl.appendChild(valueEl);
         cardEl.appendChild(suitEl);
@@ -331,8 +333,11 @@ function revealCards(selectedCardEl, openCard, hiddenCards) {
 
             const suitEl = document.createElement('div');
             suitEl.classList.add('card-suit');
-            suitEl.classList.add(card.suit === '♥' || card.suit === '♦' ? 'red' : 'black');
             suitEl.textContent = card.suit;
+
+            const  isRed = card.suit === '♥' || card.suit === '♦';
+            valueEl.classList.add(isRed ? 'red' : 'black');
+            suitEl.classList.add(isRed ? 'red' : 'black');
 
             cardEl.appendChild(valueEl);
             cardEl.appendChild(suitEl);
@@ -345,7 +350,7 @@ function revealCards(selectedCardEl, openCard, hiddenCards) {
     if (selectedCardValue > openCardValue || (selectedValue === 'A' && openCard.value !== 'A')) {
         currentWin *= 2;
         messageEl.textContent = `¡Ganaste! Tus créditos se duplicaron a ${currentWin}`;
-        showDoubleOption();
+        showDoubleOption(); // Vuelve a preguntar si desea doblar
     } else if (selectedCardValue === openCardValue) {
         messageEl.textContent = "Empate. ¿Deseas volver a doblar?";
         showDoubleOption();
@@ -386,14 +391,25 @@ function hideCreditsModal() {
 
 function submitCode() {
     const code = codeInput.value.trim();
-    const [letters, numbers] = code.split(/(\d+)/);
-    if (letters === 'poker' && numbers ===  currentUser.id) {
-        credits += 5000;
-        updateCredits();
-        messageEl.textContent = 'Se han cargado $5000 créditos.';
-        hideCreditsModal();
+    const regex = /^([a-zA-Z]{5})(\d{5})(\d+)$/;
+    const match = code.match(regex);
+
+    if (match) {
+        const [, letters, numbers, amount] = match;
+        if (numbers === currentUser.id && !usedCodes.has(code)) {
+            const rechargeAmount = parseInt(amount);
+            credits += rechargeAmount;
+            updateCredits();
+            usedCodes.add(code);
+            messageEl.textContent = `Se han cargado $${rechargeAmount} créditos.`;
+            hideCreditsModal();
+        } else if (usedCodes.has(code)) {
+            messageEl.textContent = 'Este código ya ha sido utilizado.';
+        } else {
+            messageEl.textContent = 'Código inválido. Asegúrate de que los números coincidan con tu ID.';
+        }
     } else {
-        messageEl.textContent = 'Código inválido. Inténtalo de nuevo.';
+        messageEl.textContent = 'Formato de código inválido. Debe ser 5 letras + 5 números (tu ID) + cantidad.';
     }
     codeInput.value = '';
 }
@@ -457,6 +473,7 @@ function loginUser() {
 function logoutUser() {
     currentUser.credits = credits;
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    saveUsedCodes();
     currentUser = null;
     credits = 0;
     updateCredits();
@@ -464,7 +481,7 @@ function logoutUser() {
 }
 
 function generateUserId() {
-    return Math.floor(10000 + Math.random() * 90000).toString();
+    return String(Math.floor(10000 + Math.random() * 90000));
 }
 
 function showGameScreen() {
@@ -476,6 +493,7 @@ function showGameScreen() {
     currentUserIdEl.textContent = currentUser.id;
     credits = currentUser.credits;
     updateCredits();
+    loadUsedCodes();
     createDeck();
     shuffleDeck();
     dealInitialHand();
@@ -500,6 +518,17 @@ function updateCredits() {
     if (currentUser) {
         currentUser.credits = credits;
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    }
+}
+
+function saveUsedCodes() {
+    localStorage.setItem('usedCodes', JSON.stringify([...usedCodes]));
+}
+
+function loadUsedCodes() {
+    const savedCodes = JSON.parse(localStorage.getItem('usedCodes'));
+    if (savedCodes) {
+        usedCodes = new Set(savedCodes);
     }
 }
 
