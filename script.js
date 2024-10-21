@@ -98,9 +98,8 @@ function dealCards() {
         drawBtn.disabled = false;
 
         const initialHandResult = checkHand();
-        if (initialHandResult.winMultiplier > 0 && 
-            ['Escalera', 'Color', 'Escalera de Color', 'Escalera Real'].includes(initialHandResult.handType)) {
-            document.querySelectorAll('.card').forEach(card => card.classList.add('selected'));
+        if (initialHandResult.winMultiplier > 0) {
+            markWinningCards(initialHandResult.handType);
             messageEl.textContent = `${initialHandResult.handType}! Haz clic en "Cambiar" para ganar ${initialHandResult.winMultiplier}`;
         }
     } else {
@@ -201,21 +200,22 @@ function isFlush(suits) {
 
 function isStraight(values) {
     const sortedValues = [...new Set(values)].sort((a, b) => {
-        const order = '23456789TJQKA';
+        const order = 'A23456789TJQKA';
         return order.indexOf(a) - order.indexOf(b);
     });
     if (sortedValues.length !== 5) return false;
 
-    const valueOrder = '23456789TJQKA';
+    const valueOrder = 'A23456789TJQKA';
     const indices = sortedValues.map(v => valueOrder.indexOf(v));
 
-    // Comprueba si es una escalera normal
-    if (indices[4] - indices[0] === 4) return true;
+    // Comprueba todas las escaleras posibles
+    const possibleStraights = [
+        'A2345', '23456', '34567', '45678', '56789', '6789T', '789TJ', '89TJQ', '9TJQK', 'TJQKA'
+    ];
 
-    // Comprueba si es una escalera con As bajo (A, 2, 3, 4, 5)
-    if (sortedValues[0] === 'A' && sortedValues[1] === '2' && sortedValues[4] === '5') return true;
-
-    return false;
+    return possibleStraights.some(straight => 
+        straight.split('').every(v => sortedValues.includes(v))
+    );
 }
 
 function isThreeOfAKind(values) {
@@ -234,6 +234,62 @@ function isTwoPair(values) {
 function isOnePair(values) {
     const letterPairs = ['J', 'Q', 'K', 'A'];
     return letterPairs.some(letter => values.filter(v => v === letter).length === 2);
+}
+
+function markWinningCards(handType) {
+    const cardElements = document.querySelectorAll('.card');
+    const handValues = hand.map(card => card.value);
+    const handSuits = hand.map(card => card.suit);
+
+    switch (handType) {
+        case 'Escalera Real':
+        case 'Escalera de Color':
+        case 'Escalera':
+        case 'Color':
+            cardElements.forEach(card => card.classList.add('selected'));
+            break;
+        case 'Poker':
+            const fourOfAKindValue = handValues.find(v => handValues.filter(x => x === v).length === 4);
+            cardElements.forEach((card, index) => {
+                if (hand[index].value === fourOfAKindValue) {
+                    card.classList.add('selected');
+                }
+            });
+            break;
+        case 'Full':
+            const tripleValue = handValues.find(v => handValues.filter(x => x === v).length === 3);
+            const pairValue = handValues.find(v => handValues.filter(x => x === v).length === 2);
+            cardElements.forEach((card, index) => {
+                if (hand[index].value === tripleValue || hand[index].value === pairValue) {
+                    card.classList.add('selected');
+                }
+            });
+            break;
+        case 'Trío':
+            const threeOfAKindValue = handValues.find(v => handValues.filter(x => x === v).length === 3);
+            cardElements.forEach((card, index) => {
+                if (hand[index].value === threeOfAKindValue) {
+                    card.classList.add('selected');
+                }
+            });
+            break;
+        case 'Dos Pares':
+            const pairValues = [...new Set(handValues)].filter(v => handValues.filter(x => x === v).length === 2);
+            cardElements.forEach((card, index) => {
+                if (pairValues.includes(hand[index].value)) {
+                    card.classList.add('selected');
+                }
+            });
+            break;
+        case 'Par de J o mejor':
+            const highPairValue = handValues.find(v => handValues.filter(x => x === v).length === 2 && ['J', 'Q', 'K', 'A'].includes(v));
+            cardElements.forEach((card, index) => {
+                if (hand[index].value === highPairValue) {
+                    card.classList.add('selected');
+                }
+            });
+            break;
+    }
 }
 
 function handleWin(winMultiplier, handType) {
@@ -266,6 +322,8 @@ function showDoubleOption() {
         drawBtn.disabled = true;
         messageEl.textContent = `Nueva mano. Apuesta actual: ${currentBet}`;
     });
+
+    
 
     drawBtn.disabled = true;
 }
@@ -335,7 +393,7 @@ function revealCards(selectedCardEl, openCard, hiddenCards) {
             suitEl.classList.add('card-suit');
             suitEl.textContent = card.suit;
 
-            const  isRed = card.suit === '♥' || card.suit === '♦';
+            const isRed = card.suit === '♥' || card.suit === '♦';
             valueEl.classList.add(isRed ? 'red' : 'black');
             suitEl.classList.add(isRed ? 'red' : 'black');
 
@@ -401,7 +459,7 @@ function submitCode() {
             credits += rechargeAmount;
             updateCredits();
             usedCodes.add(code);
-            messageEl.textContent = `Se han cargado $${rechargeAmount} créditos.`;
+            messageEl.textContent = `Se han cargado ${rechargeAmount} créditos.`;
             hideCreditsModal();
         } else if (usedCodes.has(code)) {
             messageEl.textContent = 'Este código ya ha sido utilizado.';
@@ -575,3 +633,58 @@ createDeck();
 shuffleDeck();
 updatePaytableHighlight();
 showLoginScreen();
+// ... (previous code remains unchanged)
+
+const predefinedCodes = [
+    { code: 'poker12345', credits: 5000 },
+    { code: 'poker12346', credits: 5000 },
+    { code: 'poker12347', credits: 5000 },
+    { code: 'poker12348', credits: 5000 },
+    { code: 'poker12349', credits: 5000 },
+    { code: 'poker12350', credits: 5000 },
+    { code: 'poker12351', credits: 5000 },
+    { code: 'poker12352', credits: 5000 },
+    { code: 'poker12353', credits: 5000 }
+];
+
+// ... (other code remains unchanged)
+
+function submitCode() {
+    const code = codeInput.value.trim();
+
+    // Check if the code is a predefined code
+    const predefinedCode = predefinedCodes.find(c => c.code === code);
+    if (predefinedCode && !usedCodes.has(code)) {
+        credits += predefinedCode.credits;
+        updateCredits();
+        usedCodes.add(code);
+        messageEl.textContent = `Se han cargado ${predefinedCode.credits} créditos.`;
+        hideCreditsModal();
+        return;
+    }
+
+    // If not a predefined code, check if it's a valid custom code
+    const regex = /^([a-zA-Z]{5})(\d{5})$/;
+    const match = code.match(regex);
+
+    if (match) {
+        const [, letters, numbers] = match;
+        if (numbers === currentUser.id && !usedCodes.has(code)) {
+            const rechargeAmount = 5000; // Fixed amount for custom codes
+            credits += rechargeAmount;
+            updateCredits();
+            usedCodes.add(code);
+            messageEl.textContent = `Se han cargado ${rechargeAmount} créditos.`;
+            hideCreditsModal();
+        } else if (usedCodes.has(code)) {
+            messageEl.textContent = 'Este código ya ha sido utilizado.';
+        } else {
+            messageEl.textContent = 'Código inválido. Asegúrate de que los números coincidan con tu ID.';
+        }
+    } else {
+        messageEl.textContent = 'Formato de código inválido. Debe ser 5 letras + 5 números (tu ID) o un código predefinido.';
+    }
+    codeInput.value = '';
+}
+
+// ... (rest of the code remains unchanged)
