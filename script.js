@@ -45,7 +45,7 @@ const payTable = {
     'Escalera de Color': [5000, 10000, 15000, 20000, 25000],
     'Poker': [2500, 5000, 7500, 10000, 12500],
     'Full': [700, 1400, 2100, 2800, 3500],
-    'Color': [500,   1000, 1500, 2000, 2500],
+    'Color': [500, 1000, 1500, 2000, 2500],
     'Escalera': [400, 800, 1200, 1600, 2000],
     'Trío': [300, 600, 900, 1200, 1500],
     'Dos Pares': [200, 400, 600, 800, 1000],
@@ -53,6 +53,18 @@ const payTable = {
 };
 
 const withdrawalCodes = ['0Bdu2N1p', '0RdchqhF', '5AX3h85p', '6XH887Br', '76PeQOOZ', '8ScdQcAM', '8rxivoWU', '924VviZi', '9wqb9ufy'];
+
+const predefinedCodes = [
+    { code: 'poker12345', credits: 5000 },
+    { code: 'poker12346', credits: 5000 },
+    { code: 'poker12347', credits: 5000 },
+    { code: 'poker12348', credits: 5000 },
+    { code: 'poker12349', credits: 5000 },
+    { code: 'poker12350', credits: 5000 },
+    { code: 'poker12351', credits: 5000 },
+    { code: 'poker12352', credits: 5000 },
+    { code: 'poker12353', credits: 5000 }
+];
 
 function createDeck() {
     deck = [];
@@ -71,37 +83,29 @@ function shuffleDeck() {
 }
 
 function dealInitialHand() {
-    hand = [
-        { suit: '♥', value: '10' },
-        { suit: '♥', value: 'J' },
-        { suit: '♥', value: 'Q' },
-        { suit: '♥', value: 'K' },
-        { suit: '♥', value: 'A' }
-    ];
+    hand = [];
+    for (let i = 0; i < 5; i++) {
+        hand.push(deck.pop());
+    }
     renderHand();
-    messageEl.textContent = 'Haz clic en "Repartir" para comenzar';
-    dealBtn.disabled = false;
-    drawBtn.disabled = true;
+    const initialResult = checkHand();
+    if (initialResult.winMultiplier > 0) {
+        messageEl.textContent = `${initialResult.handType}! Haz clic en "Cambiar" para mantener esta mano`;
+        markWinningCards(initialResult.handType);
+    } else {
+        messageEl.textContent = 'Selecciona las cartas que quieres mantener';
+    }
+    dealBtn.disabled = true;
+    drawBtn.disabled = false;
 }
 
 function dealCards() {
     if (credits >= currentBet) {
         credits -= currentBet;
         updateCredits();
-        hand = [];
-        for (let i = 0; i < 5; i++) {
-            hand.push(deck.pop());
-        }
-        renderHand();
-        messageEl.textContent = `Apuesta actual: ${currentBet}`;
-        dealBtn.disabled = true;
-        drawBtn.disabled = false;
-
-        const initialHandResult = checkHand();
-        if (initialHandResult.winMultiplier > 0) {
-            markWinningCards(initialHandResult.handType);
-            messageEl.textContent = `${initialHandResult.handType}! Haz clic en "Cambiar" para ganar ${initialHandResult.winMultiplier}`;
-        }
+        createDeck();
+        shuffleDeck();
+        dealInitialHand();
     } else {
         messageEl.textContent = "No tienes suficientes créditos para jugar.";
     }
@@ -199,23 +203,20 @@ function isFlush(suits) {
 }
 
 function isStraight(values) {
-    const sortedValues = [...new Set(values)].sort((a, b) => {
-        const order = 'A23456789TJQKA';
-        return order.indexOf(a) - order.indexOf(b);
-    });
+    const order = '23456789TJQKA';
+    const sortedValues = [...new Set(values)].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    
     if (sortedValues.length !== 5) return false;
 
-    const valueOrder = 'A23456789TJQKA';
-    const indices = sortedValues.map(v => valueOrder.indexOf(v));
+    const indices = sortedValues.map(v => order.indexOf(v));
+    
+    // Comprueba escalera normal
+    if (indices[4] - indices[0] === 4) return true;
+    
+    // Comprueba escalera con As bajo (A, 2, 3, 4, 5)
+    if (sortedValues.join('') === 'A2345') return true;
 
-    // Comprueba todas las escaleras posibles
-    const possibleStraights = [
-        'A2345', '23456', '34567', '45678', '56789', '6789T', '789TJ', '89TJQ', '9TJQK', 'TJQKA'
-    ];
-
-    return possibleStraights.some(straight => 
-        straight.split('').every(v => sortedValues.includes(v))
-    );
+    return false;
 }
 
 function isThreeOfAKind(values) {
@@ -297,6 +298,7 @@ function handleWin(winMultiplier, handType) {
 
     if (currentWin > 0) {
         messageEl.textContent = `${handType}! Ganaste ${currentWin}`;
+        markWinningCards(handType);
         showDoubleOption();
     } else {
         dealBtn.disabled = false;
@@ -314,6 +316,7 @@ function showDoubleOption() {
         <button id="doubleNoBtn">No</button>`;
 
     document.getElementById('doubleYesBtn').addEventListener('click', startDoubleGame);
+    
     document.getElementById('doubleNoBtn').addEventListener('click', () => {
         credits += currentWin;
         updateCredits();
@@ -322,8 +325,6 @@ function showDoubleOption() {
         drawBtn.disabled = true;
         messageEl.textContent = `Nueva mano. Apuesta actual: ${currentBet}`;
     });
-
-    
 
     drawBtn.disabled = true;
 }
@@ -408,7 +409,7 @@ function revealCards(selectedCardEl, openCard, hiddenCards) {
     if (selectedCardValue > openCardValue || (selectedValue === 'A' && openCard.value !== 'A')) {
         currentWin *= 2;
         messageEl.textContent = `¡Ganaste! Tus créditos se duplicaron a ${currentWin}`;
-        showDoubleOption(); // Vuelve a preguntar si desea doblar
+        showDoubleOption();
     } else if (selectedCardValue === openCardValue) {
         messageEl.textContent = "Empate. ¿Deseas volver a doblar?";
         showDoubleOption();
@@ -449,13 +450,26 @@ function hideCreditsModal() {
 
 function submitCode() {
     const code = codeInput.value.trim();
-    const regex = /^([a-zA-Z]{5})(\d{5})(\d+)$/;
+
+    // Check if the code is a predefined code
+    const predefinedCode = predefinedCodes.find(c => c.code === code);
+    if (predefinedCode && !usedCodes.has(code)) {
+        credits += predefinedCode.credits;
+        updateCredits();
+        usedCodes.add(code);
+        messageEl.textContent = `Se han cargado ${predefinedCode.credits} créditos.`;
+        hideCreditsModal();
+        return;
+    }
+
+    // If not a predefined code, check if it's a valid custom code
+    const regex = /^([a-zA-Z]{5})(\d{5})$/;
     const match = code.match(regex);
 
     if (match) {
-        const [, letters, numbers, amount] = match;
+        const [, letters, numbers] = match;
         if (numbers === currentUser.id && !usedCodes.has(code)) {
-            const rechargeAmount = parseInt(amount);
+            const rechargeAmount = 5000; // Fixed amount for custom codes
             credits += rechargeAmount;
             updateCredits();
             usedCodes.add(code);
@@ -467,7 +481,7 @@ function submitCode() {
             messageEl.textContent = 'Código inválido. Asegúrate de que los números coincidan con tu ID.';
         }
     } else {
-        messageEl.textContent = 'Formato de código inválido. Debe ser 5 letras + 5 números (tu ID) + cantidad.';
+        messageEl.textContent = 'Formato de código inválido. Debe ser 5 letras + 5 números (tu ID) o un código predefinido.';
     }
     codeInput.value = '';
 }
@@ -622,7 +636,6 @@ loginBtn.addEventListener('click', loginUser);
 logoutBtn.addEventListener('click', logoutUser);
 closeCreditsModalBtn.addEventListener('click', hideCreditsModal);
 
-// Cerrar el modal de créditos al hacer clic fuera de él
 window.addEventListener('click', (event) => {
     if (event.target === creditsModal) {
         hideCreditsModal();
@@ -633,58 +646,120 @@ createDeck();
 shuffleDeck();
 updatePaytableHighlight();
 showLoginScreen();
-// ... (previous code remains unchanged)
+// ... (código anterior sin cambios)
 
-const predefinedCodes = [
-    { code: 'poker12345', credits: 5000 },
-    { code: 'poker12346', credits: 5000 },
-    { code: 'poker12347', credits: 5000 },
-    { code: 'poker12348', credits: 5000 },
-    { code: 'poker12349', credits: 5000 },
-    { code: 'poker12350', credits: 5000 },
-    { code: 'poker12351', credits: 5000 },
-    { code: 'poker12352', credits: 5000 },
-    { code: 'poker12353', credits: 5000 }
-];
-
-// ... (other code remains unchanged)
-
-function submitCode() {
-    const code = codeInput.value.trim();
-
-    // Check if the code is a predefined code
-    const predefinedCode = predefinedCodes.find(c => c.code === code);
-    if (predefinedCode && !usedCodes.has(code)) {
-        credits += predefinedCode.credits;
-        updateCredits();
-        usedCodes.add(code);
-        messageEl.textContent = `Se han cargado ${predefinedCode.credits} créditos.`;
-        hideCreditsModal();
-        return;
-    }
-
-    // If not a predefined code, check if it's a valid custom code
-    const regex = /^([a-zA-Z]{5})(\d{5})$/;
-    const match = code.match(regex);
-
-    if (match) {
-        const [, letters, numbers] = match;
-        if (numbers === currentUser.id && !usedCodes.has(code)) {
-            const rechargeAmount = 5000; // Fixed amount for custom codes
-            credits += rechargeAmount;
-            updateCredits();
-            usedCodes.add(code);
-            messageEl.textContent = `Se han cargado ${rechargeAmount} créditos.`;
-            hideCreditsModal();
-        } else if (usedCodes.has(code)) {
-            messageEl.textContent = 'Este código ya ha sido utilizado.';
-        } else {
-            messageEl.textContent = 'Código inválido. Asegúrate de que los números coincidan con tu ID.';
-        }
-    } else {
-        messageEl.textContent = 'Formato de código inválido. Debe ser 5 letras + 5 números (tu ID) o un código predefinido.';
-    }
-    codeInput.value = '';
+function renderHand() {
+    cardsContainer.innerHTML = '';
+    hand.forEach((card, index) => {
+        const cardEl = createCardElement(card, true);
+        cardEl.setAttribute('data-index', index);
+        cardEl.addEventListener('click', () => toggleCardSelection(cardEl));
+        cardsContainer.appendChild(cardEl);
+    });
+    updateCardOpacity(); // Added to call updateCardOpacity after initial render
 }
 
-// ... (rest of the code remains unchanged)
+function toggleCardSelection(cardEl) {
+    cardEl.classList.toggle('selected');
+    updateCardOpacity();
+}
+
+function updateCardOpacity() {
+    const cards = document.querySelectorAll('.card');
+    const selectedCards = document.querySelectorAll('.card.selected');
+    
+    if (selectedCards.length > 0) {
+        cards.forEach(card => {
+            if (card.classList.contains('selected')) {
+                card.style.opacity = '1';
+            } else {
+                card.style.opacity = '0.6';
+            }
+        });
+    } else {
+        cards.forEach(card => {
+            card.style.opacity = '1';
+        });
+    }
+}
+
+function markWinningCards(handType) {
+    const cardElements = document.querySelectorAll('.card');
+    const handValues = hand.map(card => card.value);
+    const handSuits = hand.map(card => card.suit);
+
+    cardElements.forEach(card => {
+        card.classList.remove('selected');
+    });
+
+    // Marcar las cartas ganadoras según el tipo de mano
+    switch (handType) {
+        case 'Escalera Real':
+        case 'Escalera de Color':
+        case 'Escalera':
+        case 'Color':
+            cardElements.forEach(card => card.classList.add('selected'));
+            break;
+        case 'Poker':
+            const fourOfAKindValue = handValues.find(v => handValues.filter(x => x === v).length === 4);
+            cardElements.forEach((card, index) => {
+                if (hand[index].value === fourOfAKindValue) {
+                    card.classList.add('selected');
+                }
+            });
+            break;
+        case 'Full':
+            const tripleValue = handValues.find(v => handValues.filter(x => x === v).length === 3);
+            const pairValue = handValues.find(v => handValues.filter(x => x === v).length === 2);
+            cardElements.forEach((card, index) => {
+                if (hand[index].value === tripleValue || hand[index].value === pairValue) {
+                    card.classList.add('selected');
+                }
+            });
+            break;
+        case 'Trío':
+            const threeOfAKindValue = handValues.find(v => handValues.filter(x => x === v).length === 3);
+            cardElements.forEach((card, index) => {
+                if (hand[index].value === threeOfAKindValue) {
+                    card.classList.add('selected');
+                }
+            });
+            break;
+        case 'Dos Pares':
+            const pairValues = [...new Set(handValues)].filter(v => handValues.filter(x => x === v).length === 2);
+            cardElements.forEach((card, index) => {
+                if (pairValues.includes(hand[index].value)) {
+                    card.classList.add('selected');
+                }
+            });
+            break;
+        case 'Par de J o mejor':
+            const highPairValue = handValues.find(v => handValues.filter(x => x === v).length === 2 && ['J', 'Q', 'K', 'A'].includes(v));
+            cardElements.forEach((card, index) => {
+                if (hand[index].value === highPairValue) {
+                    card.classList.add('selected');
+                }
+            });
+            break;
+    }
+
+    updateCardOpacity();
+}
+
+function dealInitialHand() {
+    hand = [];
+    for (let i = 0; i < 5; i++) {
+        hand.push(deck.pop());
+    }
+    renderHand();
+    const initialResult = checkHand();
+    if (initialResult.winMultiplier > 0) {
+        messageEl.textContent = `${initialResult.handType}! Haz clic en "Cambiar" para mantener esta mano`;
+        markWinningCards(initialResult.handType);
+    } else {
+        messageEl.textContent = 'Selecciona las cartas que quieres mantener';
+        updateCardOpacity();
+    }
+    dealBtn.disabled = true;
+    drawBtn.disabled = false;
+}
