@@ -28,6 +28,17 @@ body {
     backdrop-filter: blur(5px);
 }
 
+.game-layout {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.left-panel, .center-panel, .right-panel {
+    flex: 1;
+}
+
 h1, h2, h3 {
     color: #f39c12;
     text-align: center;
@@ -193,7 +204,7 @@ button:disabled {
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 .highlight {
@@ -210,7 +221,7 @@ button:disabled {
     height: 100%;
     overflow: auto;
     background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(5px);
+    backdrop-filter:  blur(5px);
 }
 
 .modal-content {
@@ -278,6 +289,28 @@ hr {
     color: #f39c12;
 }
 
+.left-panel, .right-panel {
+    width: 25%;
+}
+
+.center-panel {
+    width: 50%;
+}
+
+.right-panel {
+    display: block;
+}
+
+@media (max-width: 1200px) {
+    .game-layout {
+        flex-direction: column;
+    }
+
+    .left-panel, .center-panel, .right-panel {
+        width: 100%;
+    }
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 20px;
@@ -312,4 +345,38 @@ hr {
         width: 95%;
         padding: 20px;
     }
+}
+
+.hidden {
+    display: none !important;
+}
+
+#registration-screen, #login-screen {
+    background-color: rgba(44, 62, 80, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+#registration-screen input, #login-screen input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: none;
+    border-radius: 5px;
+}
+
+#registerBtn, #loginBtn {
+    width: 100%;
+    padding: 10px;
+    background-color: #f39c12;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#registerBtn:hover, #loginBtn:hover {
+    background-color: #e67e22;
 }

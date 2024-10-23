@@ -1,14 +1,14 @@
 let usedCodes = new Set();
-
-const suits = ['♠', '♥', '♦', '♣'];
-const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-let deck = [];
-let hand = [];
+let currentUser = null;
 let credits = 0;
 let currentWin = 0;
 let currentBet = 100;
 let withdrawalCount = 0;
-let currentUser = null;
+let deck = [];
+let hand = [];
+
+const suits = ['♠', '♥', '♦', '♣'];
+const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
 const cardsContainer = document.getElementById('cards');
 const dealBtn = document.getElementById('dealBtn');
@@ -17,7 +17,8 @@ const messageEl = document.getElementById('message');
 const creditEl = document.getElementById('creditAmount');
 const toggleScreenBtn = document.getElementById('toggleScreenBtn');
 const gameScreen = document.getElementById('game-screen');
-const infoScreen = document.getElementById('info-screen');
+const registrationScreen = document.getElementById('registration-screen');
+const loginScreen = document.getElementById('login-screen');
 const betSelector = document.getElementById('betAmount');
 const creditsBtn = document.getElementById('creditsBtn');
 const creditsModal = document.getElementById('creditsModal');
@@ -27,8 +28,6 @@ const withdrawAmount = document.getElementById('withdrawAmount');
 const withdrawBtn = document.getElementById('withdrawBtn');
 const receiptModal = document.getElementById('receiptModal');
 const closeReceiptBtn = document.getElementById('closeReceiptBtn');
-const registrationScreen = document.getElementById('registration-screen');
-const loginScreen = document.getElementById('login-screen');
 const usernameInput = document.getElementById('username');
 const registerBtn = document.getElementById('registerBtn');
 const loginBtn = document.getElementById('loginBtn');
@@ -39,6 +38,7 @@ const registrationMessageEl = document.getElementById('registrationMessage');
 const loginMessageEl = document.getElementById('loginMessage');
 const savedUsernameEl = document.getElementById('savedUsername');
 const closeCreditsModalBtn = document.getElementById('closeCreditsModalBtn');
+const rightPanel = document.querySelector('.right-panel');
 
 const payTable = {
     'Escalera Real': [25000, 50000, 75000, 100000, 125000],
@@ -65,6 +65,97 @@ const predefinedCodes = [
     { code: 'poker12352', credits: 5000 },
     { code: 'poker12353', credits: 5000 }
 ];
+
+function saveUserData() {
+    if (currentUser) {
+        const userData = {
+            ...currentUser,
+            credits: credits
+        };
+        localStorage.setItem('videoPokerUser', JSON.stringify(userData));
+        console.log('Datos de usuario guardados:', userData);
+    }
+}
+
+function loadUserData() {
+    const savedData = localStorage.getItem('videoPokerUser');
+    console.log('Datos cargados del localStorage:', savedData);
+    if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        currentUser = {
+            username: parsedData.username,
+            id: parsedData.id
+        };
+        credits = parsedData.credits || 0;
+        console.log('Datos de usuario cargados:', currentUser, 'Créditos:', credits);
+        return true;
+    }
+    return false;
+}
+
+function showLoginScreen() {
+    registrationScreen.classList.remove('hidden');
+    loginScreen.classList.add('hidden');
+    gameScreen.classList.add('hidden');
+    
+    const savedUser = JSON.parse(localStorage.getItem('videoPokerUser'));
+    if (savedUser && savedUser.username) {
+        savedUsernameEl.textContent = savedUser.username;
+        loginScreen.classList.remove('hidden');
+        registrationScreen.classList.add('hidden');
+    } else {
+        savedUsernameEl.textContent = '';
+        registrationScreen.classList.remove('hidden');
+        loginScreen.classList.add('hidden');
+    }
+}
+
+function loginUser() {
+    if (loadUserData()) {
+        showGameScreen();
+        updateUserInfo();
+        updateCredits();
+        messageEl.textContent = `Bienvenido de nuevo, ${currentUser.username}!`;
+    } else {
+        loginMessageEl.textContent = "No se encontró un usuario guardado. Por favor, regístrate.";
+    }
+}
+
+function registerUser() {
+    const username = usernameInput.value.trim();
+    if (username) {
+        const userId = generateUniqueId();
+        currentUser = { username, id: userId };
+        credits = 0;
+        saveUserData();
+        showGameScreen();
+        updateUserInfo();
+        updateCredits();
+        messageEl.textContent = `Bienvenido, ${currentUser.username}!`;
+    } else {
+        registrationMessageEl.textContent = "Por favor, ingresa un nombre de usuario.";
+    }
+}
+
+function updateUserInfo() {
+    if (currentUser) {
+        currentUsernameEl.textContent = currentUser.username;
+        currentUserIdEl.textContent = currentUser.id;
+    }
+}
+
+function updateCredits() {
+    creditEl.textContent = credits;
+    saveUserData();
+}
+
+function logoutUser() {
+    currentUser = null;
+    credits = 0;
+    localStorage.removeItem('videoPokerUser');
+    updateCredits();
+    showLoginScreen();
+}
 
 function createDeck() {
     deck = [];
@@ -119,10 +210,31 @@ function renderHand() {
         cardEl.addEventListener('click', () => toggleCardSelection(cardEl));
         cardsContainer.appendChild(cardEl);
     });
+    updateCardOpacity();
 }
 
 function toggleCardSelection(cardEl) {
     cardEl.classList.toggle('selected');
+    updateCardOpacity();
+}
+
+function updateCardOpacity() {
+    const cards = document.querySelectorAll('.card');
+    const selectedCards = document.querySelectorAll('.card.selected');
+    
+    if (selectedCards.length > 0) {
+        cards.forEach(card => {
+            if (card.classList.contains('selected')) {
+                card.style.opacity = '1';
+            } else {
+                card.style.opacity = '0.6';
+            }
+        });
+    } else {
+        cards.forEach(card => {
+            card.style.opacity = '1';
+        });
+    }
 }
 
 function drawCards() {
@@ -242,12 +354,18 @@ function markWinningCards(handType) {
     const handValues = hand.map(card => card.value);
     const handSuits = hand.map(card => card.suit);
 
+    cardElements.forEach(card => {
+        card.classList.remove('selected');
+    });
+
     switch (handType) {
         case 'Escalera Real':
         case 'Escalera de Color':
         case 'Escalera':
         case 'Color':
-            cardElements.forEach(card => card.classList.add('selected'));
+            cardElements.forEach(card => 
+
+ card.classList.add('selected'));
             break;
         case 'Poker':
             const fourOfAKindValue = handValues.find(v => handValues.filter(x => x === v).length === 4);
@@ -291,6 +409,8 @@ function markWinningCards(handType) {
             });
             break;
     }
+
+    updateCardOpacity();
 }
 
 function handleWin(winMultiplier, handType) {
@@ -316,7 +436,6 @@ function showDoubleOption() {
         <button id="doubleNoBtn">No</button>`;
 
     document.getElementById('doubleYesBtn').addEventListener('click', startDoubleGame);
-    
     document.getElementById('doubleNoBtn').addEventListener('click', () => {
         credits += currentWin;
         updateCredits();
@@ -455,311 +574,184 @@ function submitCode() {
     const predefinedCode = predefinedCodes.find(c => c.code === code);
     if (predefinedCode && !usedCodes.has(code)) {
         credits += predefinedCode.credits;
-        updateCredits();
         usedCodes.add(code);
-        messageEl.textContent = `Se han cargado ${predefinedCode.credits} créditos.`;
+        updateCredits();
+        messageEl.textContent = `Se han añadido ${predefinedCode.credits} créditos a tu cuenta.`;
         hideCreditsModal();
         return;
     }
 
-    // If not a predefined code, check if it's a valid custom code
-    const regex = /^([a-zA-Z]{5})(\d{5})$/;
-    const match = code.match(regex);
-
-    if (match) {
-        const [, letters, numbers] = match;
-        if (numbers === currentUser.id && !usedCodes.has(code)) {
-            const rechargeAmount = 5000; // Fixed amount for custom codes
-            credits += rechargeAmount;
-            updateCredits();
-            usedCodes.add(code);
-            messageEl.textContent = `Se han cargado ${rechargeAmount} créditos.`;
-            hideCreditsModal();
-        } else if (usedCodes.has(code)) {
-            messageEl.textContent = 'Este código ya ha sido utilizado.';
-        } else {
-            messageEl.textContent = 'Código inválido. Asegúrate de que los números coincidan con tu ID.';
-        }
+    // Check if the code matches the user's ID
+    if (currentUser && code === currentUser.id) {
+        credits += 5000;
+        updateCredits();
+        messageEl.textContent = "Se han añadido 5000 créditos a tu cuenta.";
+        hideCreditsModal();
     } else {
-        messageEl.textContent = 'Formato de código inválido. Debe ser 5 letras + 5 números (tu ID) o un código predefinido.';
+        messageEl.textContent = "Código inválido.";
     }
     codeInput.value = '';
 }
 
 function withdrawCredits() {
     const amount = parseInt(withdrawAmount.value);
-    if (isNaN(amount) || amount <= 0) {
-        messageEl.textContent = 'Por favor, ingresa un monto válido.';
-        return;
-    }
-    if (amount > credits) {
-        messageEl.textContent = 'No tienes suficientes créditos para retirar esa cantidad.';
+    if (isNaN(amount) || amount <= 0 || amount > credits) {
+        messageEl.textContent = "Cantidad inválida para retirar.";
         return;
     }
 
     credits -= amount;
     updateCredits();
-    hideCreditsModal();
-    showReceipt(amount);
-}
 
-function showReceipt(amount) {
-    const now = new Date();
-    const receiptCode = withdrawalCodes[withdrawalCount % withdrawalCodes.length];
+    const withdrawalCode = withdrawalCodes[withdrawalCount % withdrawalCodes.length];
     withdrawalCount++;
 
-    document.getElementById('receiptUsername').textContent = currentUser.username;
-    document.getElementById('receiptPlayerId').textContent = currentUser.id;
-    document.getElementById('receiptAmount').textContent = amount;
-    document.getElementById('receiptDate').textContent = now.toLocaleDateString();
-    document.getElementById('receiptTime').textContent = now.toLocaleTimeString();
-    document.getElementById('receiptCode').textContent = receiptCode;
+    const now = new Date();
+    const receiptData = {
+        username: currentUser.username,
+        playerId: currentUser.id,
+        amount: amount,
+        date: now.toLocaleDateString(),
+        time: now.toLocaleTimeString(),
+        code: withdrawalCode
+    };
+
+    displayReceipt(receiptData);
+    hideCreditsModal();
+}
+
+function displayReceipt(data) {
+    document.getElementById('receiptUsername').textContent = data.username;
+    document.getElementById('receiptPlayerId').textContent = data.playerId;
+    document.getElementById('receiptAmount').textContent = data.amount;
+    document.getElementById('receiptDate').textContent = data.date;
+    document.getElementById('receiptTime').textContent = data.time;
+    document.getElementById('receiptCode').textContent = data.code;
 
     receiptModal.classList.remove('hidden');
 }
 
-function registerUser() {
-    const username = usernameInput.value.trim();
-    if (username) {
-        const userId = generateUserId();
-        const user = { username, id: userId, credits: 0 };
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        currentUser = user;
-        showGameScreen();
-    } else {
-        registrationMessageEl.textContent = 'Por favor, ingresa un nombre de usuario.';
-    }
-}
-
-function loginUser() {
-    const savedUser = JSON.parse(localStorage.getItem('currentUser'));
-    if (savedUser) {
-        currentUser = savedUser;
-        credits = currentUser.credits;
-        showGameScreen();
-    } else {
-        loginMessageEl.textContent = 'No se encontró un usuario guardado. Por favor, regístrate.';
-    }
-}
-
-function logoutUser() {
-    currentUser.credits = credits;
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    saveUsedCodes();
-    currentUser = null;
-    credits = 0;
-    updateCredits();
-    showLoginScreen();
-}
-
-function generateUserId() {
-    return String(Math.floor(10000 + Math.random() * 90000));
+function generateUniqueId() {
+    return Math.random().toString(36).substr(2, 5).toUpperCase();
 }
 
 function showGameScreen() {
     registrationScreen.classList.add('hidden');
     loginScreen.classList.add('hidden');
     gameScreen.classList.remove('hidden');
-    logoutBtn.classList.remove('hidden');
-    currentUsernameEl.textContent = currentUser.username;
-    currentUserIdEl.textContent = currentUser.id;
-    credits = currentUser.credits;
-    updateCredits();
-    loadUsedCodes();
-    createDeck();
-    shuffleDeck();
-    dealInitialHand();
 }
 
-function showLoginScreen() {
-    const savedUser = JSON.parse(localStorage.getItem('currentUser'));
-    if (savedUser) {
-        registrationScreen.classList.add('hidden');
-        loginScreen.classList.remove('hidden');
-        savedUsernameEl.textContent = savedUser.username;
+function togglePaytable() {
+    if (rightPanel) {
+        rightPanel.style.display = rightPanel.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function initializeGame() {
+    if (loadUserData()) {
+        showGameScreen();
+        updateUserInfo();
+        updateCredits();
+        messageEl.textContent = `Bienvenido de nuevo, ${currentUser.username}!`;
     } else {
-        registrationScreen.classList.remove('hidden');
-        loginScreen.classList.add('hidden');
+        showLoginScreen();
     }
-    gameScreen.classList.add('hidden');
-    logoutBtn.classList.add('hidden');
-}
 
-function updateCredits() {
-    creditEl.textContent = credits;
-    if (currentUser) {
-        currentUser.credits = credits;
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    if (toggleScreenBtn) {
+        toggleScreenBtn.addEventListener('click', togglePaytable);
     }
-}
 
-function saveUsedCodes() {
-    localStorage.setItem('usedCodes', JSON.stringify([...usedCodes]));
-}
-
-function loadUsedCodes() {
-    const savedCodes = JSON.parse(localStorage.getItem('usedCodes'));
-    if (savedCodes) {
-        usedCodes = new Set(savedCodes);
-    }
-}
-
-dealBtn.addEventListener('click', () => {
-    if (credits >= currentBet) {
-        createDeck();
-        shuffleDeck();
-        dealCards();
-    } else {
-        messageEl.textContent = "No tienes suficientes créditos para jugar.";
-    }
-});
-
-drawBtn.addEventListener('click', drawCards);
-
-toggleScreenBtn.addEventListener('click', () => {
-    gameScreen.classList.toggle('hidden');
-    infoScreen.classList.toggle('hidden');
-    updatePaytableHighlight();
-});
-
-betSelector.addEventListener('change', (e) => {
-    currentBet = parseInt(e.target.value);
-    updatePaytableHighlight();
-});
-
-creditsBtn.addEventListener('click', showCreditsModal);
-submitCodeBtn.addEventListener('click', submitCode);
-withdrawBtn.addEventListener('click', withdrawCredits);
-closeReceiptBtn.addEventListener('click', () => receiptModal.classList.add('hidden'));
-registerBtn.addEventListener('click', registerUser);
-loginBtn.addEventListener('click', loginUser);
-logoutBtn.addEventListener('click', logoutUser);
-closeCreditsModalBtn.addEventListener('click', hideCreditsModal);
-
-window.addEventListener('click', (event) => {
-    if (event.target === creditsModal) {
-        hideCreditsModal();
-    }
-});
-
-createDeck();
-shuffleDeck();
-updatePaytableHighlight();
-showLoginScreen();
-// ... (código anterior sin cambios)
-
-function renderHand() {
-    cardsContainer.innerHTML = '';
-    hand.forEach((card, index) => {
-        const cardEl = createCardElement(card, true);
-        cardEl.setAttribute('data-index', index);
-        cardEl.addEventListener('click', () => toggleCardSelection(cardEl));
-        cardsContainer.appendChild(cardEl);
-    });
-    updateCardOpacity(); // Added to call updateCardOpacity after initial render
-}
-
-function toggleCardSelection(cardEl) {
-    cardEl.classList.toggle('selected');
-    updateCardOpacity();
-}
-
-function updateCardOpacity() {
-    const cards = document.querySelectorAll('.card');
-    const selectedCards = document.querySelectorAll('.card.selected');
-    
-    if (selectedCards.length > 0) {
-        cards.forEach(card => {
-            if (card.classList.contains('selected')) {
-                card.style.opacity = '1';
+    if (dealBtn && drawBtn && betSelector && creditsBtn && submitCodeBtn && 
+        withdrawBtn && closeReceiptBtn && registerBtn && loginBtn && logoutBtn && 
+        closeCreditsModalBtn) {
+        
+        dealBtn.addEventListener('click', () => {
+            if (credits >= currentBet) {
+                createDeck();
+                shuffleDeck();
+                dealCards();
             } else {
-                card.style.opacity = '0.6';
+                messageEl.textContent = "No tienes suficientes créditos para jugar.";
+            }
+        });
+
+        drawBtn.addEventListener('click', drawCards);
+
+        betSelector.addEventListener('change', (e) => {
+            currentBet = parseInt(e.target.value);
+            updatePaytableHighlight();
+        });
+
+        creditsBtn.addEventListener('click', showCreditsModal);
+        submitCodeBtn.addEventListener('click', submitCode);
+        withdrawBtn.addEventListener('click', withdrawCredits);
+        closeReceiptBtn.addEventListener('click', () => receiptModal.classList.add('hidden'));
+        registerBtn.addEventListener('click', registerUser);
+        loginBtn.addEventListener('click', loginUser);
+        logoutBtn.addEventListener('click', logoutUser);
+        closeCreditsModalBtn.addEventListener('click', hideCreditsModal);
+
+        window.addEventListener('click', (event) => {
+            if (event.target === creditsModal) {
+                hideCreditsModal();
             }
         });
     } else {
-        cards.forEach(card => {
-            card.style.opacity = '1';
-        });
+        console.error('Algunos elementos del DOM no se encontraron.');
     }
+
+    createDeck();
+    shuffleDeck();
+    updatePaytableHighlight();
 }
 
-function markWinningCards(handType) {
-    const cardElements = document.querySelectorAll('.card');
-    const handValues = hand.map(card => card.value);
-    const handSuits = hand.map(card => card.suit);
+document.addEventListener('DOMContentLoaded', initializeGame);
+// ... (código anterior sin cambios)
 
-    cardElements.forEach(card => {
-        card.classList.remove('selected');
-    });
-
-    // Marcar las cartas ganadoras según el tipo de mano
-    switch (handType) {
-        case 'Escalera Real':
-        case 'Escalera de Color':
-        case 'Escalera':
-        case 'Color':
-            cardElements.forEach(card => card.classList.add('selected'));
-            break;
-        case 'Poker':
-            const fourOfAKindValue = handValues.find(v => handValues.filter(x => x === v).length === 4);
-            cardElements.forEach((card, index) => {
-                if (hand[index].value === fourOfAKindValue) {
-                    card.classList.add('selected');
-                }
-            });
-            break;
-        case 'Full':
-            const tripleValue = handValues.find(v => handValues.filter(x => x === v).length === 3);
-            const pairValue = handValues.find(v => handValues.filter(x => x === v).length === 2);
-            cardElements.forEach((card, index) => {
-                if (hand[index].value === tripleValue || hand[index].value === pairValue) {
-                    card.classList.add('selected');
-                }
-            });
-            break;
-        case 'Trío':
-            const threeOfAKindValue = handValues.find(v => handValues.filter(x => x === v).length === 3);
-            cardElements.forEach((card, index) => {
-                if (hand[index].value === threeOfAKindValue) {
-                    card.classList.add('selected');
-                }
-            });
-            break;
-        case 'Dos Pares':
-            const pairValues = [...new Set(handValues)].filter(v => handValues.filter(x => x === v).length === 2);
-            cardElements.forEach((card, index) => {
-                if (pairValues.includes(hand[index].value)) {
-                    card.classList.add('selected');
-                }
-            });
-            break;
-        case 'Par de J o mejor':
-            const highPairValue = handValues.find(v => handValues.filter(x => x === v).length === 2 && ['J', 'Q', 'K', 'A'].includes(v));
-            cardElements.forEach((card, index) => {
-                if (hand[index].value === highPairValue) {
-                    card.classList.add('selected');
-                }
-            });
-            break;
-    }
-
-    updateCardOpacity();
+function generateUniqueId() {
+    return Math.floor(10000 + Math.random() * 90000).toString();
 }
 
-function dealInitialHand() {
-    hand = [];
-    for (let i = 0; i < 5; i++) {
-        hand.push(deck.pop());
-    }
-    renderHand();
-    const initialResult = checkHand();
-    if (initialResult.winMultiplier > 0) {
-        messageEl.textContent = `${initialResult.handType}! Haz clic en "Cambiar" para mantener esta mano`;
-        markWinningCards(initialResult.handType);
+// ... (código anterior sin cambios)
+
+function registerUser() {
+    const username = usernameInput.value.trim();
+    if (username) {
+        const userId = generateUniqueId();
+        currentUser = { username, id: userId };
+        credits = 0;
+        saveUserData();
+        showGameScreen();
+        updateUserInfo();
+        updateCredits();
+        messageEl.textContent = `Bienvenido, ${currentUser.username}! Tu ID de jugador es ${userId}`;
     } else {
-        messageEl.textContent = 'Selecciona las cartas que quieres mantener';
-        updateCardOpacity();
+        registrationMessageEl.textContent = "Por favor, ingresa un nombre de usuario.";
     }
-    dealBtn.disabled = true;
-    drawBtn.disabled = false;
+}
+
+function submitCode() {
+    const code = codeInput.value.trim();
+
+    // Check if the code is a predefined code
+    const predefinedCode = predefinedCodes.find(c => c.code === code);
+    if (predefinedCode && !usedCodes.has(code)) {
+        credits += predefinedCode.credits;
+        usedCodes.add(code);
+        updateCredits();
+        messageEl.textContent = `Se han añadido ${predefinedCode.credits} créditos a tu cuenta.`;
+        hideCreditsModal();
+        return;
+    }
+
+    // Check if the code matches the user's ID
+    if (currentUser && code === currentUser.id) {
+        credits += 5000;
+        updateCredits();
+        messageEl.textContent = "Se han añadido 5000 créditos a tu cuenta.";
+        hideCreditsModal();
+    } else {
+        messageEl.textContent = "Código inválido.";
+    }
+    codeInput.value = '';
 }
