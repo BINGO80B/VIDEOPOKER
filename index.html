@@ -9,15 +9,11 @@
 <body>
     <div class="container">
         <div class="game-layout">
-            <div class="left-panel">
+            <div class="top-panel">
                 <div id="user-info">
                     <p>Usuario: <span id="currentUsername"></span></p>
                     <p>ID: <span id="currentUserId"></span></p>
                 </div>
-                <div id="credits">
-                    Créditos: $<span id="creditAmount">0</span>
-                </div>
-                <button id="creditsBtn">Gestionar Créditos</button>
                 <button id="logoutBtn">Cerrar Sesión</button>
             </div>
             <div class="center-panel">
@@ -50,12 +46,97 @@
                     <p id="loginMessage"></p>
                 </div>
             </div>
-            <div class="right-panel">
-                <button id="toggleScreenBtn">Mostrar/Ocultar Tabla de Pagos</button>
-                <div id="paytable">
-                    <!-- Contenido de la tabla de pagos (sin cambios) -->
+            <div class="bottom-panel">
+                <div id="credits">
+                    Créditos: $<span id="creditAmount">0</span>
                 </div>
+                <button id="creditsBtn">Gestionar Créditos</button>
             </div>
+        </div>
+        <div id="paytable">
+            <h3>Tabla de Pagos</h3>
+            <table>
+                <tr>
+                    <th>Mano</th>
+                    <th>100 Créditos</th>
+                    <th>200 Créditos</th>
+                    <th>300 Créditos</th>
+                    <th>400 Créditos</th>
+                    <th>500 Créditos</th>
+                </tr>
+                <tr>
+                    <td>Escalera Real</td>
+                    <td>25000</td>
+                    <td>50000</td>
+                    <td>75000</td>
+                    <td>100000</td>
+                    <td>125000</td>
+                </tr>
+                <tr>
+                    <td>Escalera de Color</td>
+                    <td>5000</td>
+                    <td>10000</td>
+                    <td>15000</td>
+                    <td>20000</td>
+                    <td>25000</td>
+                </tr>
+                <tr>
+                    <td>Poker</td>
+                    <td>2500</td>
+                    <td>5000</td>
+                    <td>7500</td>
+                    <td>10000</td>
+                    <td>12500</td>
+                </tr>
+                <tr>
+                    <td>Full</td>
+                    <td>700</td>
+                    <td>1400</td>
+                    <td>2100</td>
+                    <td>2800</td>
+                    <td>3500</td>
+                </tr>
+                <tr>
+                    <td>Color</td>
+                    <td>500</td>
+                    <td>1000</td>
+                    <td>1500</td>
+                    <td>2000</td>
+                    <td>2500</td>
+                </tr>
+                <tr>
+                    <td>Escalera</td>
+                    <td>400</td>
+                    <td>800</td>
+                    <td>1200</td>
+                    <td>1600</td>
+                    <td>2000</td>
+                </tr>
+                <tr>
+                    <td>Trío</td>
+                    <td>300</td>
+                    <td>600</td>
+                    <td>900</td>
+                    <td>1200</td>
+                    <td>1500</td>
+                </tr>
+                <tr>
+                    <td>Dos Pares</td>
+                    <td>200</td>
+                    <td>400</td>
+                    <td>600</td>
+                    <td>800</td>
+                    <td>1000</td>
+                </tr>
+                <tr>
+                    <td>Par de J o mejor</td>
+                    <td>100</td>
+                    <td>200</td>
+                    <td>300</td>
+                    <td>400</td>
+                    <td>500</td>
+                </tr>
+            </table>
         </div>
     </div>
     <div id="creditsModal" class="modal hidden">

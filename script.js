@@ -55,22 +55,23 @@ const payTable = {
 const withdrawalCodes = ['0Bdu2N1p', '0RdchqhF', '5AX3h85p', '6XH887Br', '76PeQOOZ', '8ScdQcAM', '8rxivoWU', '924VviZi', '9wqb9ufy'];
 
 const predefinedCodes = [
-    { code: 'poker12345', credits: 5000 },
-    { code: 'poker12346', credits: 5000 },
-    { code: 'poker12347', credits: 5000 },
-    { code: 'poker12348', credits: 5000 },
-    { code: 'poker12349', credits: 5000 },
-    { code: 'poker12350', credits: 5000 },
-    { code: 'poker12351', credits: 5000 },
-    { code: 'poker12352', credits: 5000 },
-    { code: 'poker12353', credits: 5000 }
+    { code: 'POKER12345', credits: 5000 },
+    { code: 'POKER23456', credits: 5000 },
+    { code: 'POKER34567', credits: 5000 },
+    { code: 'POKER45678', credits: 5000 },
+    { code: 'POKER56789', credits: 5000 },
+    { code: 'POKER67890', credits: 5000 },
+    { code: 'POKER78901', credits: 5000 },
+    { code: 'POKER89012', credits: 5000 },
+    { code: 'POKER90123', credits: 5000 }
 ];
 
 function saveUserData() {
     if (currentUser) {
         const userData = {
             ...currentUser,
-            credits: credits
+            credits: credits,
+            usedCodes: Array.from(usedCodes)
         };
         localStorage.setItem('videoPokerUser', JSON.stringify(userData));
         console.log('Datos de usuario guardados:', userData);
@@ -87,7 +88,8 @@ function loadUserData() {
             id: parsedData.id
         };
         credits = parsedData.credits || 0;
-        console.log('Datos de usuario cargados:', currentUser, 'Créditos:', credits);
+        usedCodes = new Set(parsedData.usedCodes || []);
+        console.log('Datos de usuario cargados:', currentUser, 'Créditos:', credits, 'Códigos usados:', usedCodes);
         return true;
     }
     return false;
@@ -116,6 +118,7 @@ function loginUser() {
         updateUserInfo();
         updateCredits();
         messageEl.textContent = `Bienvenido de nuevo, ${currentUser.username}!`;
+        showDemoHand();
     } else {
         loginMessageEl.textContent = "No se encontró un usuario guardado. Por favor, regístrate.";
     }
@@ -131,7 +134,8 @@ function registerUser() {
         showGameScreen();
         updateUserInfo();
         updateCredits();
-        messageEl.textContent = `Bienvenido, ${currentUser.username}!`;
+        messageEl.textContent = `Bienvenido, ${currentUser.username}! Tu ID de jugador es ${userId}`;
+        showDemoHand();
     } else {
         registrationMessageEl.textContent = "Por favor, ingresa un nombre de usuario.";
     }
@@ -171,6 +175,20 @@ function shuffleDeck() {
         const j = Math.floor(Math.random() * (i + 1));
         [deck[i], deck[j]] = [deck[j], deck[i]];
     }
+}
+
+function showDemoHand() {
+    hand = [
+        { suit: '♥', value: '10' },
+        { suit: '♥', value: 'J' },
+        { suit: '♥', value: 'Q' },
+        { suit: '♥', value: 'K' },
+        { suit: '♥', value: 'A' }
+    ];
+    renderHand();
+    messageEl.textContent = 'Demostración: Escalera Real. Haz clic en "Repartir" para comenzar a jugar.';
+    dealBtn.disabled = false;
+    drawBtn.disabled = true;
 }
 
 function dealInitialHand() {
@@ -320,11 +338,9 @@ function isStraight(values) {
     
     if (sortedValues.length !== 5) return false;
 
-    const indices = sortedValues.map(v => order.indexOf(v));
-    
     // Comprueba escalera normal
-    if (indices[4] - indices[0] === 4) return true;
-    
+    if (order.includes(sortedValues.join(''))) return true;
+
     // Comprueba escalera con As bajo (A, 2, 3, 4, 5)
     if (sortedValues.join('') === 'A2345') return true;
 
@@ -345,7 +361,7 @@ function isTwoPair(values) {
 }
 
 function isOnePair(values) {
-    const letterPairs = ['J', 'Q', 'K', 'A'];
+    const  letterPairs = ['J', 'Q', 'K', 'A'];
     return letterPairs.some(letter => values.filter(v => v === letter).length === 2);
 }
 
@@ -363,9 +379,7 @@ function markWinningCards(handType) {
         case 'Escalera de Color':
         case 'Escalera':
         case 'Color':
-            cardElements.forEach(card => 
-
- card.classList.add('selected'));
+            cardElements.forEach(card => card.classList.add('selected'));
             break;
         case 'Poker':
             const fourOfAKindValue = handValues.find(v => handValues.filter(x => x === v).length === 4);
@@ -430,8 +444,8 @@ function handleWin(winMultiplier, handType) {
 function showDoubleOption() {
     const potentialWin = currentWin * 2;
     messageEl.innerHTML = `¿Deseas doblar?<br>
-        Créditos actuales a doblar: ${currentWin}<br>
-        Cantidad a ganar si ganas la doblada: ${potentialWin}<br>
+        ${currentWin}<br>
+        ${potentialWin}<br>
         <button id="doubleYesBtn">Sí</button>
         <button id="doubleNoBtn">No</button>`;
 
@@ -568,27 +582,43 @@ function hideCreditsModal() {
 }
 
 function submitCode() {
-    const code = codeInput.value.trim();
+    const code = codeInput.value.trim().toUpperCase();
 
-    // Check if the code is a predefined code
+    if (usedCodes.has(code)) {
+        messageEl.textContent = "Este código ya ha sido utilizado.";
+        codeInput.value = '';
+        return;
+    }
+
+    if (!currentUser) {
+        messageEl.textContent = "Debes iniciar sesión para usar un código.";
+        codeInput.value = '';
+        return;
+    }
+
+    const userIdLastFive = currentUser.id.slice(-5);
+    
+    // Verificar si el código es uno de los predefinidos y coincide con el ID del usuario
     const predefinedCode = predefinedCodes.find(c => c.code === code);
-    if (predefinedCode && !usedCodes.has(code)) {
+    if (predefinedCode && code.endsWith(userIdLastFive)) {
         credits += predefinedCode.credits;
         usedCodes.add(code);
         updateCredits();
         messageEl.textContent = `Se han añadido ${predefinedCode.credits} créditos a tu cuenta.`;
         hideCreditsModal();
+        codeInput.value = '';
         return;
     }
 
-    // Check if the code matches the user's ID
-    if (currentUser && code === currentUser.id) {
+    // Verificar si el código coincide con el ID del usuario
+    if (code === `POKER${userIdLastFive}`) {
         credits += 5000;
+        usedCodes.add(code);
         updateCredits();
         messageEl.textContent = "Se han añadido 5000 créditos a tu cuenta.";
         hideCreditsModal();
     } else {
-        messageEl.textContent = "Código inválido.";
+        messageEl.textContent = "Código inválido o no corresponde a tu ID de jugador.";
     }
     codeInput.value = '';
 }
@@ -632,7 +662,7 @@ function displayReceipt(data) {
 }
 
 function generateUniqueId() {
-    return Math.random().toString(36).substr(2, 5).toUpperCase();
+    return Math.floor(10000 + Math.random() * 90000).toString();
 }
 
 function showGameScreen() {
@@ -653,6 +683,7 @@ function initializeGame() {
         updateUserInfo();
         updateCredits();
         messageEl.textContent = `Bienvenido de nuevo, ${currentUser.username}!`;
+        showDemoHand();
     } else {
         showLoginScreen();
     }
@@ -706,52 +737,3 @@ function initializeGame() {
 }
 
 document.addEventListener('DOMContentLoaded', initializeGame);
-// ... (código anterior sin cambios)
-
-function generateUniqueId() {
-    return Math.floor(10000 + Math.random() * 90000).toString();
-}
-
-// ... (código anterior sin cambios)
-
-function registerUser() {
-    const username = usernameInput.value.trim();
-    if (username) {
-        const userId = generateUniqueId();
-        currentUser = { username, id: userId };
-        credits = 0;
-        saveUserData();
-        showGameScreen();
-        updateUserInfo();
-        updateCredits();
-        messageEl.textContent = `Bienvenido, ${currentUser.username}! Tu ID de jugador es ${userId}`;
-    } else {
-        registrationMessageEl.textContent = "Por favor, ingresa un nombre de usuario.";
-    }
-}
-
-function submitCode() {
-    const code = codeInput.value.trim();
-
-    // Check if the code is a predefined code
-    const predefinedCode = predefinedCodes.find(c => c.code === code);
-    if (predefinedCode && !usedCodes.has(code)) {
-        credits += predefinedCode.credits;
-        usedCodes.add(code);
-        updateCredits();
-        messageEl.textContent = `Se han añadido ${predefinedCode.credits} créditos a tu cuenta.`;
-        hideCreditsModal();
-        return;
-    }
-
-    // Check if the code matches the user's ID
-    if (currentUser && code === currentUser.id) {
-        credits += 5000;
-        updateCredits();
-        messageEl.textContent = "Se han añadido 5000 créditos a tu cuenta.";
-        hideCreditsModal();
-    } else {
-        messageEl.textContent = "Código inválido.";
-    }
-    codeInput.value = '';
-}
