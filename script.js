@@ -186,7 +186,7 @@ function showDemoHand() {
         { suit: '♥', value: 'A' }
     ];
     renderHand();
-    messageEl.textContent = 'Demostración: Escalera Real. Haz clic en "Repartir" para comenzar a jugar.';
+    messageEl.textContent = 'para cargar creditos comunicate al whatsapp +573247159521 para comenzar a jugar.';
     dealBtn.disabled = false;
     drawBtn.disabled = true;
 }
@@ -216,7 +216,7 @@ function dealCards() {
         shuffleDeck();
         dealInitialHand();
     } else {
-        messageEl.textContent = "No tienes suficientes créditos para jugar.";
+        messageEl.textContent = "No tienes suficientes créditos para jugar, carga tus creditos en el whatsapp +573247159521.";
     }
 }
 
@@ -618,7 +618,7 @@ function submitCode() {
         messageEl.textContent = "Se han añadido 5000 créditos a tu cuenta.";
         hideCreditsModal();
     } else {
-        messageEl.textContent = "Código inválido o no corresponde a tu ID de jugador.";
+        messageEl.textContent = "Código inválido, comunicate al whatsapp +573247159521.";
     }
     codeInput.value = '';
 }
@@ -702,7 +702,7 @@ function initializeGame() {
                 shuffleDeck();
                 dealCards();
             } else {
-                messageEl.textContent = "No tienes suficientes créditos para jugar.";
+                messageEl.textContent = "No tienes suficientes créditos para jugar, comunicate al whatsapp +573247159521.";
             }
         });
 
