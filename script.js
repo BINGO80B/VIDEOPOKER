@@ -452,8 +452,8 @@ function handleWin(winMultiplier, handType) {
 function showDoubleOption() {
     const potentialWin = currentWin * 2;
     messageEl.innerHTML = `¿Deseas doblar?<br>
-         ${currentWin}<br>
-         ${potentialWin}<br>
+ ${currentWin}<br>
+ ${potentialWin}<br>
         <button id="doubleYesBtn">Sí</button>
         <button id="doubleNoBtn">No</button>`;
 
