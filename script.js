@@ -15,7 +15,6 @@ const dealBtn = document.getElementById('dealBtn');
 const drawBtn = document.getElementById('drawBtn');
 const messageEl = document.getElementById('message');
 const creditEl = document.getElementById('creditAmount');
-const toggleScreenBtn = document.getElementById('toggleScreenBtn');
 const gameScreen = document.getElementById('game-screen');
 const registrationScreen = document.getElementById('registration-screen');
 const loginScreen = document.getElementById('login-screen');
@@ -38,7 +37,6 @@ const registrationMessageEl = document.getElementById('registrationMessage');
 const loginMessageEl = document.getElementById('loginMessage');
 const savedUsernameEl = document.getElementById('savedUsername');
 const closeCreditsModalBtn = document.getElementById('closeCreditsModalBtn');
-const rightPanel = document.querySelector('.right-panel');
 
 const payTable = {
     'Escalera Real': [25000, 50000, 75000, 100000, 125000],
@@ -54,16 +52,26 @@ const payTable = {
 
 const withdrawalCodes = ['0Bdu2N1p', '0RdchqhF', '5AX3h85p', '6XH887Br', '76PeQOOZ', '8ScdQcAM', '8rxivoWU', '924VviZi', '9wqb9ufy'];
 
-const predefinedCodes = [
-    { code: 'POKER12345', credits: 5000 },
-    { code: 'POKER23456', credits: 5000 },
-    { code: 'POKER34567', credits: 5000 },
-    { code: 'POKER45678', credits: 5000 },
-    { code: 'POKER56789', credits: 5000 },
-    { code: 'POKER67890', credits: 5000 },
-    { code: 'POKER78901', credits: 5000 },
-    { code: 'POKER89012', credits: 5000 },
-    { code: 'POKER90123', credits: 5000 }
+const creditCodes = {
+    '5IdLv4jR': 5000, '8vlyRU5W': 5000, 'BEYz2rFT': 5000, 'CPmJ5oYC': 5000, 'IcRog70b': 5000,
+    'K2ocCdKW': 5000, 'LO0qxEZF': 5000, 'MfuVZn6t': 5000, 'Mg6BcH65': 5000, 'NgL89vtz': 5000,
+    'OELpbpeo': 5000, 'U1hLyPmi': 5000, 'Wt4NVNvi': 5000, 'Y2SjeXUv': 5000, 'ZpayGb9q': 5000,
+    'eCyIc3qb': 5000, 'eVS3Kc2N': 5000, 'flFX7S7B': 5000, 'g7DAvaJg': 5000, 'gKxhkZHP': 5000,
+    'hSlmDdYV': 5000, 'tAqDRQef': 5000, 'tBjusacC': 5000, 'tC3R3mHa': 5000, 'teiEASjG': 5000,
+    'T7yzREyU': 10000, 'Tsrynozh': 10000, 'VRv2MGJH': 10000, 'XCWYQUeE': 10000, 'Zpb0sK0Z': 10000,
+    'aPvK1dgN': 10000, 'b2gW8OWj': 10000, 'bc0WlmI4': 10000, 'ehsYxUCG': 10000, 'fO5nmCMO': 10000,
+    'h5TCMCuM': 10000, 'iFUmljwu': 10000, 'js7Ed4c3': 10000, 'nMQZZOBZ': 10000, 'nQ15nNEp': 10000,
+    'ovDKk2xE': 10000, 'pARTnfvG': 10000, 'psXLn0Up': 10000, 'qB3CrmqU': 10000, 's4dpByiK': 10000,
+    'vtqID2Rl': 10000, 'wID6MRFp': 10000, 'z7zrqTUR': 10000, '00j3FzRu': 20000, '38UDEYjx': 20000,
+    '64b4ezIs': 20000, '70rtSQBf': 20000, '7ETVDxXt': 20000, '7gClHovz': 20000, '7hBnUE4E': 20000,
+    '9F4Peefi': 20000, '9oInwXII': 20000, 'AGZ8ChYn': 20000, 'AqMG364D': 20000, 'BkU9BL7V': 20000,
+    'Cky3EQUE': 20000, 'EGW2dnhG': 20000, 'EbaQdQWc': 20000, 'FFkEvMZn': 20000, 'MTW3dLfE': 20000,
+    'MWtSMvWD': 20000, 'MavbJx8c': 20000, 'Ny1ZhZN6': 20000, 'P8dz1BgP': 20000, 'QOypLVLf': 20000,
+    'QrrrOaaB': 20000, 'SIenPh0A': 20000, 'Sbyl5YVb': 20000, 'SeXHfzYK': 20000, 'SmOR0E2v': 20000
+};
+
+const validStraights = [
+    'A2345', '23456', '34567', '45678', '56789', '678910', '78910J', '8910JQ', '910JQK', '10JQKA'
 ];
 
 function saveUserData() {
@@ -130,6 +138,7 @@ function registerUser() {
         const userId = generateUniqueId();
         currentUser = { username, id: userId };
         credits = 0;
+        usedCodes = new Set();
         saveUserData();
         showGameScreen();
         updateUserInfo();
@@ -156,6 +165,7 @@ function updateCredits() {
 function logoutUser() {
     currentUser = null;
     credits = 0;
+    usedCodes = new Set();
     localStorage.removeItem('videoPokerUser');
     updateCredits();
     showLoginScreen();
@@ -186,7 +196,7 @@ function showDemoHand() {
         { suit: '♥', value: 'A' }
     ];
     renderHand();
-    messageEl.textContent = 'para cargar creditos comunicate al whatsapp +573247159521 para comenzar a jugar.';
+    messageEl.textContent = 'para cargar creditos, comunicate al whatsapp +573247159521 para comenzar a jugar.';
     dealBtn.disabled = false;
     drawBtn.disabled = true;
 }
@@ -216,7 +226,7 @@ function dealCards() {
         shuffleDeck();
         dealInitialHand();
     } else {
-        messageEl.textContent = "No tienes suficientes créditos para jugar, carga tus creditos en el whatsapp +573247159521.";
+        messageEl.textContent = "No tienes suficientes créditos para jugar. para cargar creditos comunicate al wharsapp +573247159521";
     }
 }
 
@@ -275,7 +285,9 @@ function checkHand() {
     let handType = '';
 
     if (isRoyalFlush(handValues, handSuits)) {
-        winMultiplier = payTable['Escalera Real'][(currentBet / 100) - 1];
+        winMultiplier = payTable['Escalera Real'][(currentBet / 100) - 
+
+ 1];
         handType = "Escalera Real";
     } else if (isStraightFlush(handValues, handSuits)) {
         winMultiplier = payTable['Escalera de Color'][(currentBet / 100) - 1];
@@ -307,8 +319,9 @@ function checkHand() {
 }
 
 function isRoyalFlush(values, suits) {
-    const royalValues = ['10', 'J', 'Q', 'K', 'A'];
-    return isStraightFlush(values, suits) && royalValues.every(v => values.includes(v));
+    const normalizedValues = values.map(v => v === '10' ? 'T' : v);
+    const sortedValues = normalizedValues.sort((a, b) => '23456789TJQKA'.indexOf(a) - '23456789TJQKA'.indexOf(b)).join('');
+    return isFlush(suits) && (sortedValues === 'TJQKA' || sortedValues === 'AJQKT');
 }
 
 function isStraightFlush(values, suits) {
@@ -333,18 +346,13 @@ function isFlush(suits) {
 }
 
 function isStraight(values) {
-    const order = '23456789TJQKA';
-    const sortedValues = [...new Set(values)].sort((a, b) => order.indexOf(a) - order.indexOf(b));
-    
-    if (sortedValues.length !== 5) return false;
-
-    // Comprueba escalera normal
-    if (order.includes(sortedValues.join(''))) return true;
-
-    // Comprueba escalera con As bajo (A, 2, 3, 4, 5)
-    if (sortedValues.join('') === 'A2345') return true;
-
-    return false;
+    const normalizedValues = values.map(v => v === '10' ? 'T' : v);
+    const sortedValues = normalizedValues.sort((a, b) => '23456789TJQKA'.indexOf(a) - '23456789TJQKA'.indexOf(b));
+    const handString = sortedValues.join('');
+    return validStraights.some(straight => {
+        const normalizedStraight = straight.replace('10', 'T');
+        return normalizedStraight === handString || normalizedStraight === handString.replace(/(.+)(.{1})/, '$2$1');
+    });
 }
 
 function isThreeOfAKind(values) {
@@ -361,7 +369,7 @@ function isTwoPair(values) {
 }
 
 function isOnePair(values) {
-    const  letterPairs = ['J', 'Q', 'K', 'A'];
+    const letterPairs = ['J', 'Q', 'K', 'A'];
     return letterPairs.some(letter => values.filter(v => v === letter).length === 2);
 }
 
@@ -444,8 +452,8 @@ function handleWin(winMultiplier, handType) {
 function showDoubleOption() {
     const potentialWin = currentWin * 2;
     messageEl.innerHTML = `¿Deseas doblar?<br>
-        ${currentWin}<br>
-        ${potentialWin}<br>
+        Créditos actuales a doblar: ${currentWin}<br>
+        Cantidad a ganar si ganas la doblada: ${potentialWin}<br>
         <button id="doubleYesBtn">Sí</button>
         <button id="doubleNoBtn">No</button>`;
 
@@ -582,13 +590,7 @@ function hideCreditsModal() {
 }
 
 function submitCode() {
-    const code = codeInput.value.trim().toUpperCase();
-
-    if (usedCodes.has(code)) {
-        messageEl.textContent = "Este código ya ha sido utilizado.";
-        codeInput.value = '';
-        return;
-    }
+    const code = codeInput.value.trim();
 
     if (!currentUser) {
         messageEl.textContent = "Debes iniciar sesión para usar un código.";
@@ -596,29 +598,21 @@ function submitCode() {
         return;
     }
 
-    const userIdLastFive = currentUser.id.slice(-5);
-    
-    // Verificar si el código es uno de los predefinidos y coincide con el ID del usuario
-    const predefinedCode = predefinedCodes.find(c => c.code === code);
-    if (predefinedCode && code.endsWith(userIdLastFive)) {
-        credits += predefinedCode.credits;
-        usedCodes.add(code);
-        updateCredits();
-        messageEl.textContent = `Se han añadido ${predefinedCode.credits} créditos a tu cuenta.`;
-        hideCreditsModal();
+    if (usedCodes.has(code)) {
+        messageEl.textContent = "Este código ya ha sido utilizado. para cargar creditos comunicate al whatsapp +573247159521";
         codeInput.value = '';
         return;
     }
 
-    // Verificar si el código coincide con el ID del usuario
-    if (code === `POKER${userIdLastFive}`) {
-        credits += 5000;
+    if (code in creditCodes) {
+        const creditAmount = creditCodes[code];
+        credits += creditAmount;
         usedCodes.add(code);
         updateCredits();
-        messageEl.textContent = "Se han añadido 5000 créditos a tu cuenta.";
+        messageEl.textContent = `Se han añadido ${creditAmount} créditos a tu cuenta.`;
         hideCreditsModal();
     } else {
-        messageEl.textContent = "Código inválido, comunicate al whatsapp +573247159521.";
+        messageEl.textContent = "Código inválido. para cargar creditos, comunicate al whatsapp +573247159521";
     }
     codeInput.value = '';
 }
@@ -671,12 +665,6 @@ function showGameScreen() {
     gameScreen.classList.remove('hidden');
 }
 
-function togglePaytable() {
-    if (rightPanel) {
-        rightPanel.style.display = rightPanel.style.display === 'none' ? 'block' : 'none';
-    }
-}
-
 function initializeGame() {
     if (loadUserData()) {
         showGameScreen();
@@ -686,10 +674,6 @@ function initializeGame() {
         showDemoHand();
     } else {
         showLoginScreen();
-    }
-
-    if (toggleScreenBtn) {
-        toggleScreenBtn.addEventListener('click', togglePaytable);
     }
 
     if (dealBtn && drawBtn && betSelector && creditsBtn && submitCodeBtn && 
@@ -702,7 +686,7 @@ function initializeGame() {
                 shuffleDeck();
                 dealCards();
             } else {
-                messageEl.textContent = "No tienes suficientes créditos para jugar, comunicate al whatsapp +573247159521.";
+                messageEl.textContent = "No tienes suficientes créditos para jugar. comunicate al whatsapp +573247159521";
             }
         });
 
