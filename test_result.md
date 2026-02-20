@@ -101,3 +101,86 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: Test the updated video poker backend API for paytable values and double game functionality
+
+backend:
+  - task: "GET /api/paytable - Verify paytable values"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "testing"
+        -comment: "Paytable verified: full_house = 7, flush = 5, all other values correct as expected"
+
+  - task: "Double Game Flow - Complete workflow"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "testing"
+        -comment: "Complete double game flow tested: reload credits, deal hand, draw cards, start double, select card - all working correctly with proper credit updates"
+
+  - task: "Double Game Edge Cases"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "testing"
+        -comment: "Edge cases verified: insufficient credits properly rejected (400), invalid card indices rejected (400), selection without active game rejected (400)"
+
+  - task: "Double Game Cancel Functionality"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "testing"
+        -comment: "POST /api/double/cancel works correctly - clears double state and returns current credits"
+
+  - task: "Multiple Double Rounds Support"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "testing"
+        -comment: "Multiple double rounds supported: win/tie allows next round, lose clears state correctly"
+
+frontend:
+  # Frontend testing not performed as per instructions
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "All double game functionality tested and verified"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    -agent: "testing"
+    -message: "Comprehensive testing completed for video poker double game functionality. All requested features are working correctly: 1) Paytable values verified (full_house=7, flush=5) 2) Complete double game workflow functional 3) All edge cases properly handled 4) Cancel functionality works 5) Multiple rounds supported. Backend API is fully functional and ready."
