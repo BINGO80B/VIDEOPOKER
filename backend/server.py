@@ -265,6 +265,93 @@ async def draw_cards(request: DrawRequest):
         "credits": new_credits
     }
 
+@api_router.post("/double/start")
+async def start_double(amount: int):
+    """Start double game after winning"""
+    player = await db.players.find_one({"player_id": "single_player"})
+    if not player or player["credits"] < amount:
+        raise HTTPException(status_code=400, detail="Créditos insuficientes para doblar")
+    
+    # Create and shuffle deck for double game
+    deck = create_deck()
+    deck = shuffle_deck(deck)
+    
+    # First card is dealer's (visible), next 4 are hidden
+    dealer_card = deck[0]
+    hidden_cards = deck[1:5]
+    
+    # Store double state
+    double_states["single_player"] = {
+        "amount": amount,
+        "dealer_card": dealer_card,
+        "hidden_cards": hidden_cards
+    }
+    
+    return {
+        "dealer_card": dealer_card,
+        "amount": amount
+    }
+
+@api_router.post("/double/select")
+async def select_double_card(request: DoubleRequest):
+    """Select a hidden card and compare with dealer"""
+    if "single_player" not in double_states:
+        raise HTTPException(status_code=400, detail="No hay juego de doblar activo")
+    
+    double_state = double_states["single_player"]
+    
+    if request.selected_index < 0 or request.selected_index > 3:
+        raise HTTPException(status_code=400, detail="Índice de carta inválido")
+    
+    dealer_card = double_state["dealer_card"]
+    player_card = double_state["hidden_cards"][request.selected_index]
+    amount = double_state["amount"]
+    
+    dealer_value = RANK_VALUES[dealer_card["rank"]]
+    player_value = RANK_VALUES[player_card["rank"]]
+    
+    player = await db.players.find_one({"player_id": "single_player"})
+    
+    if player_value > dealer_value:
+        # Player wins - double the amount
+        result = "win"
+        new_credits = player["credits"] + amount
+        # Keep double state for potential next double
+    elif player_value < dealer_value:
+        # Player loses
+        result = "lose"
+        new_credits = player["credits"] - amount
+        # Clear double state
+        del double_states["single_player"]
+    else:
+        # Tie
+        result = "tie"
+        new_credits = player["credits"]
+        # Keep double state for another try
+    
+    # Update credits
+    await db.players.update_one(
+        {"player_id": "single_player"},
+        {"$set": {"credits": new_credits}}
+    )
+    
+    return {
+        "result": result,
+        "player_card": player_card,
+        "dealer_card": dealer_card,
+        "credits": new_credits,
+        "amount": amount
+    }
+
+@api_router.post("/double/cancel")
+async def cancel_double():
+    """Cancel double game and keep winnings"""
+    if "single_player" in double_states:
+        del double_states["single_player"]
+    
+    player = await db.players.find_one({"player_id": "single_player"})
+    return {"credits": player["credits"] if player else 0}
+
 @api_router.get("/paytable")
 async def get_paytable():
     """Get the paytable"""
