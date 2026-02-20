@@ -136,8 +136,17 @@ class GameState(BaseModel):
     hand: List[dict]
     bet: int
 
+class DoubleRequest(BaseModel):
+    selected_index: int
+
+class DoubleState(BaseModel):
+    amount: int
+    dealer_card: dict
+    hidden_cards: List[dict]
+
 # Store game state temporarily (in production, use Redis or similar)
 game_states = {}
+double_states = {}
 
 # API Endpoints
 @api_router.get("/credits")
