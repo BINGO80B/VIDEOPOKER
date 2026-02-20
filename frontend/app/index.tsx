@@ -8,7 +8,6 @@ import {
   TextInput,
   Alert,
   ScrollView,
-  Dimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
@@ -35,6 +34,14 @@ export default function VideoPoker() {
   const [password, setPassword] = useState('');
   const [reloadAmount, setReloadAmount] = useState('');
   const [payTable, setPayTable] = useState<PayTable>({});
+  
+  // Double game states
+  const [doubleModalVisible, setDoubleModalVisible] = useState(false);
+  const [doubleAmount, setDoubleAmount] = useState(0);
+  const [dealerCard, setDealerCard] = useState<Card | null>(null);
+  const [playerCard, setPlayerCard] = useState<Card | null>(null);
+  const [doubleResult, setDoubleResult] = useState<'win' | 'lose' | 'tie' | ''>('');
+  const [showDoubleResult, setShowDoubleResult] = useState(false);
 
   useEffect(() => {
     fetchCredits();
@@ -112,9 +119,119 @@ export default function VideoPoker() {
       setLastResult(formatHandType(data.hand_type));
       setLastWinnings(data.winnings);
       setGameState('drawn');
+
+      // If won, ask if they want to double
+      if (data.winnings > 0) {
+        setTimeout(() => {
+          Alert.alert(
+            '¡GANASTE!',
+            `Ganaste $${data.winnings.toLocaleString()}. ¿Deseas doblar?`,
+            [
+              { text: 'NO', onPress: () => {} },
+              { text: 'SÍ', onPress: () => startDouble(data.winnings) }
+            ]
+          );
+        }, 500);
+      }
     } catch (error) {
       console.error('Error drawing:', error);
       Alert.alert('Error', 'Error al cambiar cartas');
+    }
+  };
+
+  const startDouble = async (amount: number) => {
+    try {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/double/start?amount=${amount}`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        Alert.alert('Error', error.detail);
+        return;
+      }
+
+      const data = await response.json();
+      setDealerCard(data.dealer_card);
+      setDoubleAmount(data.amount);
+      setPlayerCard(null);
+      setDoubleResult('');
+      setShowDoubleResult(false);
+      setDoubleModalVisible(true);
+    } catch (error) {
+      console.error('Error starting double:', error);
+      Alert.alert('Error', 'Error al iniciar doblar');
+    }
+  };
+
+  const selectDoubleCard = async (index: number) => {
+    try {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/double/select`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selected_index: index }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        Alert.alert('Error', error.detail);
+        return;
+      }
+
+      const data = await response.json();
+      setPlayerCard(data.player_card);
+      setDoubleResult(data.result);
+      setCredits(data.credits);
+      setShowDoubleResult(true);
+
+      // Show result after a delay
+      setTimeout(() => {
+        if (data.result === 'win') {
+          Alert.alert(
+            '¡GANASTE!',
+            `¡Doblaste tu apuesta! Ganaste $${data.amount.toLocaleString()}. ¿Deseas doblar de nuevo?`,
+            [
+              { text: 'NO', onPress: () => cancelDouble() },
+              { text: 'SÍ', onPress: () => startDouble(data.amount * 2) }
+            ]
+          );
+        } else if (data.result === 'tie') {
+          Alert.alert(
+            'EMPATE',
+            'Empate. Tu carta tiene el mismo valor que la del dealer. ¿Deseas doblar de nuevo?',
+            [
+              { text: 'NO', onPress: () => cancelDouble() },
+              { text: 'SÍ', onPress: () => startDouble(data.amount) }
+            ]
+          );
+        } else {
+          Alert.alert('PERDISTE', `Perdiste $${data.amount.toLocaleString()}`);
+          setTimeout(() => {
+            setDoubleModalVisible(false);
+            setDealerCard(null);
+            setPlayerCard(null);
+            setDoubleResult('');
+          }, 1000);
+        }
+      }, 1500);
+    } catch (error) {
+      console.error('Error selecting card:', error);
+      Alert.alert('Error', 'Error al seleccionar carta');
+    }
+  };
+
+  const cancelDouble = async () => {
+    try {
+      await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/double/cancel`, {
+        method: 'POST',
+      });
+      setDoubleModalVisible(false);
+      setDealerCard(null);
+      setPlayerCard(null);
+      setDoubleResult('');
+      fetchCredits();
+    } catch (error) {
+      console.error('Error canceling double:', error);
     }
   };
 
@@ -354,6 +471,84 @@ export default function VideoPoker() {
                 <Text style={styles.modalButtonText}>CONFIRMAR</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Double Game Modal */}
+      <Modal
+        visible={doubleModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={cancelDouble}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.doubleModalContent}>
+            <Text style={styles.doubleTitle}>DOBLAR O NADA</Text>
+            <Text style={styles.doubleAmount}>Doblando: ${doubleAmount.toLocaleString()}</Text>
+            
+            <View style={styles.doubleCardsContainer}>
+              {/* Dealer Card (visible) */}
+              <View style={styles.doubleCardSection}>
+                <Text style={styles.doubleCardLabel}>DEALER</Text>
+                {dealerCard && (
+                  <View style={styles.doubleCard}>
+                    <Text style={[styles.doubleCardText, { color: getCardColor(dealerCard.suit) }]}>
+                      {dealerCard.rank}{dealerCard.suit}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Player Cards (hidden until selected) */}
+              <View style={styles.doubleCardSection}>
+                <Text style={styles.doubleCardLabel}>ELIGE UNA CARTA</Text>
+                <View style={styles.playerCardsRow}>
+                  {[0, 1, 2, 3].map((index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.hiddenCard,
+                        playerCard && index === 0 && styles.selectedCard,
+                      ]}
+                      onPress={() => !showDoubleResult && selectDoubleCard(index)}
+                      disabled={showDoubleResult}
+                    >
+                      {playerCard && index === 0 ? (
+                        <Text style={[styles.doubleCardText, { color: getCardColor(playerCard.suit) }]}>
+                          {playerCard.rank}{playerCard.suit}
+                        </Text>
+                      ) : (
+                        <Text style={styles.cardBackText}>?</Text>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </View>
+
+            {showDoubleResult && (
+              <View style={styles.doubleResultContainer}>
+                {doubleResult === 'win' && (
+                  <Text style={styles.doubleResultWin}>¡GANASTE!</Text>
+                )}
+                {doubleResult === 'tie' && (
+                  <Text style={styles.doubleResultTie}>EMPATE</Text>
+                )}
+                {doubleResult === 'lose' && (
+                  <Text style={styles.doubleResultLose}>PERDISTE</Text>
+                )}
+              </View>
+            )}
+
+            {!showDoubleResult && (
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={cancelDouble}
+              >
+                <Text style={styles.modalButtonText}>CANCELAR</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </Modal>
@@ -600,6 +795,99 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  doubleModalContent: {
+    backgroundColor: '#0a5c0a',
+    borderRadius: 12,
+    padding: 24,
+    width: '90%',
+    maxWidth: 600,
+    borderWidth: 3,
+    borderColor: '#ffd700',
+  },
+  doubleTitle: {
+    color: '#ffd700',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  doubleAmount: {
+    color: '#00ff00',
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  doubleCardsContainer: {
+    gap: 20,
+  },
+  doubleCardSection: {
+    alignItems: 'center',
+  },
+  doubleCardLabel: {
+    color: '#ffd700',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  doubleCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    width: 100,
+    height: 140,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#333',
+  },
+  doubleCardText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
+  playerCardsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  hiddenCard: {
+    backgroundColor: '#1a1a8c',
+    borderRadius: 8,
+    width: 70,
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#0000cc',
+  },
+  selectedCard: {
+    backgroundColor: '#fff',
+    borderColor: '#ffd700',
+  },
+  cardBackText: {
+    color: '#fff',
+    fontSize: 36,
+    fontWeight: 'bold',
+  },
+  doubleResultContainer: {
+    marginTop: 20,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  doubleResultWin: {
+    color: '#00ff00',
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
+  doubleResultTie: {
+    color: '#ffff00',
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
+  doubleResultLose: {
+    color: '#ff0000',
+    fontSize: 32,
     fontWeight: 'bold',
   },
 });
