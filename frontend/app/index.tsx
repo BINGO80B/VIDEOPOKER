@@ -512,12 +512,12 @@ export default function VideoPoker() {
                       key={index}
                       style={[
                         styles.hiddenCard,
-                        playerCard && index === 0 && styles.selectedCard,
+                        selectedCardIndex === index && styles.selectedCard,
                       ]}
                       onPress={() => !showDoubleResult && selectDoubleCard(index)}
                       disabled={showDoubleResult}
                     >
-                      {playerCard && index === 0 ? (
+                      {selectedCardIndex === index && playerCard ? (
                         <Text style={[styles.doubleCardText, { color: getCardColor(playerCard.suit) }]}>
                           {playerCard.rank}{playerCard.suit}
                         </Text>
