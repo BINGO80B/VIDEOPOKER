@@ -231,6 +231,7 @@ export default function VideoPoker() {
       setDoubleModalVisible(false);
       setDealerCard(null);
       setPlayerCard(null);
+      setSelectedCardIndex(-1);
       setDoubleResult('');
       fetchCredits();
     } catch (error) {
