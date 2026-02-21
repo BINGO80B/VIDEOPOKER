@@ -40,6 +40,7 @@ export default function VideoPoker() {
   const [doubleAmount, setDoubleAmount] = useState(0);
   const [dealerCard, setDealerCard] = useState<Card | null>(null);
   const [playerCard, setPlayerCard] = useState<Card | null>(null);
+  const [selectedCardIndex, setSelectedCardIndex] = useState<number>(-1);
   const [doubleResult, setDoubleResult] = useState<'win' | 'lose' | 'tie' | ''>('');
   const [showDoubleResult, setShowDoubleResult] = useState(false);
 
