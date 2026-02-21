@@ -851,6 +851,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
+  winModalText: {
+    color: '#00ff00',
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
   modalLabel: {
     color: '#fff',
     fontSize: 14,
