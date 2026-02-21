@@ -523,6 +523,61 @@ export default function VideoPoker() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>RECARGAR CRÉDITOS</Text>
             
+            <Text style={styles.modalLabel}>Contraseña:</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              placeholder="Ingresa la contraseña"
+              placeholderTextColor="#666"
+            />
+            
+            <Text style={styles.modalLabel}>Monto ($2,000 - $1,000,000):</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={reloadAmount}
+              onChangeText={setReloadAmount}
+              keyboardType="numeric"
+              placeholder="Ingresa el monto"
+              placeholderTextColor="#666"
+            />
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => {
+                  setReloadModalVisible(false);
+                  setPassword('');
+                  setReloadAmount('');
+                }}
+              >
+                <Text style={styles.modalButtonText}>CANCELAR</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={handleReload}
+              >
+                <Text style={styles.modalButtonText}>CONFIRMAR</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Double Game Modal */}
+      <Modal
+        visible={doubleModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={cancelDouble}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.doubleModalContent}>
+            <Text style={styles.doubleTitle}>DOBLAR O NADA</Text>
+            <Text style={styles.doubleAmount}>Doblando: ${doubleAmount.toLocaleString()}</Text>
+            
             <View style={styles.doubleCardsContainer}>
               {/* Dealer Card (visible) */}
               <View style={styles.doubleCardSection}>
