@@ -156,6 +156,7 @@ export default function VideoPoker() {
       setDealerCard(data.dealer_card);
       setDoubleAmount(data.amount);
       setPlayerCard(null);
+      setSelectedCardIndex(-1);
       setDoubleResult('');
       setShowDoubleResult(false);
       setDoubleModalVisible(true);
