@@ -181,6 +181,7 @@ export default function VideoPoker() {
 
       const data = await response.json();
       setPlayerCard(data.player_card);
+      setSelectedCardIndex(index);
       setDoubleResult(data.result);
       setCredits(data.credits);
       setShowDoubleResult(true);
