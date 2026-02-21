@@ -43,6 +43,7 @@ export default function VideoPoker() {
   const [selectedCardIndex, setSelectedCardIndex] = useState<number>(-1);
   const [doubleResult, setDoubleResult] = useState<'win' | 'lose' | 'tie' | ''>('');
   const [showDoubleResult, setShowDoubleResult] = useState(false);
+  const [askDoubleModalVisible, setAskDoubleModalVisible] = useState(false);
 
   useEffect(() => {
     fetchCredits();
