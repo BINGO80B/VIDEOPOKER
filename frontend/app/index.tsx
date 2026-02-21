@@ -475,17 +475,53 @@ export default function VideoPoker() {
         </View>
       </Modal>
 
-      {/* Double Game Modal */}
+      {/* Ask Double Modal */}
       <Modal
-        visible={doubleModalVisible}
+        visible={askDoubleModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={cancelDouble}
+        onRequestClose={() => setAskDoubleModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.doubleModalContent}>
-            <Text style={styles.doubleTitle}>DOBLAR O NADA</Text>
-            <Text style={styles.doubleAmount}>Doblando: ${doubleAmount.toLocaleString()}</Text>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>¡GANASTE!</Text>
+            <Text style={styles.winModalText}>
+              Ganaste ${doubleAmount.toLocaleString()}
+            </Text>
+            <Text style={styles.modalLabel}>¿Deseas doblar tu ganancia?</Text>
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setAskDoubleModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>NO</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={() => {
+                  setAskDoubleModalVisible(false);
+                  startDouble(doubleAmount);
+                }}
+              >
+                <Text style={styles.modalButtonText}>SÍ</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Reload Modal */}
+      <Modal
+        visible={reloadModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setReloadModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>RECARGAR CRÉDITOS</Text>
             
             <View style={styles.doubleCardsContainer}>
               {/* Dealer Card (visible) */}
