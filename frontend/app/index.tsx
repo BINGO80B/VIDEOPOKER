@@ -124,15 +124,9 @@ export default function VideoPoker() {
 
       // If won, ask if they want to double
       if (data.winnings > 0) {
+        setDoubleAmount(data.winnings);
         setTimeout(() => {
-          Alert.alert(
-            '¡GANASTE!',
-            `Ganaste $${data.winnings.toLocaleString()}. ¿Deseas doblar?`,
-            [
-              { text: 'NO', onPress: () => {} },
-              { text: 'SÍ', onPress: () => startDouble(data.winnings) }
-            ]
-          );
+          setAskDoubleModalVisible(true);
         }, 500);
       }
     } catch (error) {
