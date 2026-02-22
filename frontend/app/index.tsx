@@ -185,32 +185,44 @@ export default function VideoPoker() {
       // Show result after a delay
       setTimeout(() => {
         if (data.result === 'win') {
-          Alert.alert(
-            '¡GANASTE!',
-            `¡Doblaste tu apuesta! Ganaste $${data.amount.toLocaleString()}. ¿Deseas doblar de nuevo?`,
-            [
-              { text: 'NO', onPress: () => cancelDouble() },
-              { text: 'SÍ', onPress: () => startDouble(data.amount * 2) }
-            ]
-          );
+          // Player won - close double modal and ask if they want to double again
+          setDoubleModalVisible(false);
+          setDealerCard(null);
+          setPlayerCard(null);
+          setSelectedCardIndex(-1);
+          setDoubleResult('');
+          setShowDoubleResult(false);
+          
+          // Set the new doubled amount and show ask double modal
+          const newAmount = data.amount * 2;
+          setDoubleAmount(newAmount);
+          setTimeout(() => {
+            setAskDoubleModalVisible(true);
+          }, 300);
         } else if (data.result === 'tie') {
-          Alert.alert(
-            'EMPATE',
-            'Empate. Tu carta tiene el mismo valor que la del dealer. ¿Deseas doblar de nuevo?',
-            [
-              { text: 'NO', onPress: () => cancelDouble() },
-              { text: 'SÍ', onPress: () => startDouble(data.amount) }
-            ]
-          );
+          // Tie - close double modal and ask if they want to double again with same amount
+          setDoubleModalVisible(false);
+          setDealerCard(null);
+          setPlayerCard(null);
+          setSelectedCardIndex(-1);
+          setDoubleResult('');
+          setShowDoubleResult(false);
+          
+          // Keep the same amount and show ask double modal
+          setDoubleAmount(data.amount);
+          setTimeout(() => {
+            setAskDoubleModalVisible(true);
+          }, 300);
         } else {
-          Alert.alert('PERDISTE', `Perdiste $${data.amount.toLocaleString()}`);
+          // Player lost - close modal after showing result
           setTimeout(() => {
             setDoubleModalVisible(false);
             setDealerCard(null);
             setPlayerCard(null);
             setSelectedCardIndex(-1);
             setDoubleResult('');
-          }, 1000);
+            setShowDoubleResult(false);
+          }, 1500);
         }
       }, 1500);
     } catch (error) {
